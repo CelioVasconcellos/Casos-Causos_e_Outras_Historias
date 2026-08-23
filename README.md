@@ -1,4 +1,4 @@
-# Casos, Cousos e Outras Histórias
+# Casos, Causos e Outras Histórias
 
 Plataforma web de relatos comunitários com feed estilo rede social, formulário de envio e painel de moderação.
 
