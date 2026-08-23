@@ -1,0 +1,52 @@
+﻿version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: casos_user
+      POSTGRES_PASSWORD: casos_password
+      POSTGRES_DB: casos_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - casos_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://casos_user:casos_password@db:5432/casos_db
+      JWT_SECRET: sua_chave_secreta_super_segura_aqui
+      NODE_ENV: development
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    networks:
+      - casos_network
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:8000/api
+    networks:
+      - casos_network
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+
+networks:
+  casos_network:
+    driver: bridge
