@@ -13,10 +13,10 @@ export default function AdminDashboard() {
   const fetchStories = async () => {
     setLoading(true)
     try {
-      const token = localStorage.getItem('token')
+      const token = localStorage.getItem('admin_token')
       const { data } = await axios.get('/api/admin/stories', {
         params: { status_filter: filter },
-        headers: { Authorization: Bearer \ }
+        headers: { Authorization: `Bearer ${token}` }
       })
       setStories(data)
     } catch (error) {
@@ -27,9 +27,9 @@ export default function AdminDashboard() {
 
   const updateStory = async (id, status) => {
     try {
-      const token = localStorage.getItem('token')
-      await axios.put(\/api/admin/stories/\\, { status }, {
-        headers: { Authorization: \Bearer \\ }
+      const token = localStorage.getItem('admin_token')
+      await axios.put(`/api/admin/stories/${id}`, { status }, {
+        headers: { Authorization: `Bearer ${token}` }
       })
       fetchStories()
     } catch (error) {
@@ -40,9 +40,9 @@ export default function AdminDashboard() {
   const deleteStory = async (id) => {
     if (confirm('Tem certeza que deseja deletar?')) {
       try {
-        const token = localStorage.getItem('token')
-        await axios.delete(\/api/admin/stories/\\, {
-          headers: { Authorization: \Bearer \\ }
+        const token = localStorage.getItem('admin_token')
+        await axios.delete(`/api/admin/stories/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
         })
         fetchStories()
       } catch (error) {
@@ -51,18 +51,36 @@ export default function AdminDashboard() {
     }
   }
 
+  const requestRevision = async (id) => {
+    const note = window.prompt('Explique ao autor o que precisa ser corrigido:')
+    if (!note || !note.trim()) return
+
+    try {
+      const token = localStorage.getItem('admin_token')
+      await axios.put(`/api/admin/stories/${id}`, {
+        status: 'needs_revision',
+        moderation_note: note.trim(),
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      fetchStories()
+    } catch (error) {
+      console.error('Erro ao solicitar correção')
+    }
+  }
+
   return (
     <div className="max-w-6xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">Painel de Moderação</h1>
       
       <div className="mb-6 flex gap-2">
-        {['pending', 'approved', 'rejected'].map(status => (
+        {['pending', 'needs_revision', 'approved'].map(status => (
           <button
             key={status}
             onClick={() => setFilter(status)}
-            className={\px-4 py-2 rounded-lg font-semibold \\}
+            className={`px-4 py-2 rounded-lg font-semibold ${filter === status ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
           >
-            {status === 'pending' ? 'Pendentes' : status === 'approved' ? 'Aprovadas' : 'Rejeitadas'}
+            {status === 'pending' ? 'Pendentes' : status === 'needs_revision' ? 'Correções' : 'Aprovadas'}
           </button>
         ))}
       </div>
@@ -76,6 +94,11 @@ export default function AdminDashboard() {
               <h3 className="font-bold text-lg">{story.title}</h3>
               <p className="text-sm text-gray-600 mb-3">{story.author_name} • {story.category}</p>
               <p className="text-gray-700 mb-4">{story.story_text.substring(0, 200)}...</p>
+              {story.moderation_note && (
+                <p className="mb-4 rounded bg-yellow-50 p-3 text-sm text-yellow-800">
+                  Orientação ao autor: {story.moderation_note}
+                </p>
+              )}
               <div className="flex gap-2">
                 {filter === 'pending' && (
                   <>
@@ -86,10 +109,10 @@ export default function AdminDashboard() {
                       Aprovar
                     </button>
                     <button
-                      onClick={() => updateStory(story.id, 'rejected')}
-                      className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                      onClick={() => requestRevision(story.id)}
+                      className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
                     >
-                      Rejeitar
+                      Solicitar correção
                     </button>
                   </>
                 )}

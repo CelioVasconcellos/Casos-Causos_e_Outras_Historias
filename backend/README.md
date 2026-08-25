@@ -1,4 +1,4 @@
-﻿# Casos, Cousos e Outras Histórias
+﻿# Casos, Causos e Outras Histórias
 
 Plataforma comunitária para compartilhamento de histórias e narrativas em formato de mural digital.
 

@@ -39,7 +39,7 @@ def list_all_stories(
     db: Session = Depends(get_db)
 ):
     query = db.query(Story)
-    if status_filter and status_filter in ["pending", "approved", "rejected"]:
+    if status_filter and status_filter in ["pending", "needs_revision", "approved"]:
         query = query.filter(Story.status == status_filter)
     
     stories = query.order_by(Story.created_at.desc()).offset(skip).limit(limit).all()

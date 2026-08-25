@@ -1,6 +1,13 @@
 ﻿version: '3.8'
 
 services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - casos_network
+
   db:
     image: postgres:15
     environment:
@@ -21,10 +28,15 @@ services:
     environment:
       DATABASE_URL: postgresql://casos_user:casos_password@db:5432/casos_db
       JWT_SECRET: sua_chave_secreta_super_segura_aqui
-      NODE_ENV: development
+      FRONTEND_URL: http://localhost:5173
+      CORS_ORIGINS: http://localhost:5173
+      COOKIE_SECURE: "false"
+      REDIS_URL: redis://redis:6379/0
+      APP_ENV: development
     ports:
       - "8000:8000"
     depends_on:
+      - redis
       - db
     networks:
       - casos_network

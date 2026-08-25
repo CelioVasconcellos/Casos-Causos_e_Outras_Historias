@@ -1,7 +1,7 @@
-﻿import { useState } from 'react'
+﻿import { useState, useEffect } from 'react'
 import axios from 'axios'
 
-export default function StoryForm({ onSuccess }) {
+export default function StoryForm({ onSuccess, storyToEdit = null }) {
   const [formData, setFormData] = useState({
     title: '',
     author_name: '',
@@ -10,6 +10,18 @@ export default function StoryForm({ onSuccess }) {
   })
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [mediaFile, setMediaFile] = useState(null)
+
+  useEffect(() => {
+    if (storyToEdit) {
+      setFormData({
+        title: storyToEdit.title,
+        author_name: storyToEdit.author_name,
+        category: storyToEdit.category,
+        story_text: storyToEdit.story_text,
+      })
+    }
+  }, [storyToEdit])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -20,12 +32,20 @@ export default function StoryForm({ onSuccess }) {
     e.preventDefault()
     setLoading(true)
     try {
-      const token = localStorage.getItem('token')
-      await axios.post('/api/stories', formData, {
-        headers: { Authorization: Bearer \ }
+      const token = localStorage.getItem('token') || localStorage.getItem('admin_token')
+      const payload = new FormData()
+      Object.entries(formData).forEach(([key, value]) => payload.append(key, value))
+      if (mediaFile) payload.append('media', mediaFile)
+
+      const endpoint = storyToEdit ? `/api/stories/${storyToEdit.id}` : '/api/stories'
+      const method = storyToEdit ? 'put' : 'post'
+      await axios[method](endpoint, payload, {
+        headers: { Authorization: `Bearer ${token}` }
       })
       setMessage('Obrigado! Seu relato foi enviado para curadoria.')
       setFormData({ title: '', author_name: '', category: 'Geral', story_text: '' })
+      setMediaFile(null)
+      e.target.reset()
       if (onSuccess) onSuccess()
     } catch (error) {
       setMessage('Erro ao enviar. Tente novamente.')
@@ -80,6 +100,17 @@ export default function StoryForm({ onSuccess }) {
         rows="8"
         className="w-full px-4 py-2 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
+
+      <label className="block mb-4">
+        <span className="block mb-2 text-sm font-semibold text-gray-700">Foto ou vídeo (opcional)</span>
+        <input
+          type="file"
+          accept="image/*,video/mp4,video/webm,video/quicktime"
+          onChange={(e) => setMediaFile(e.target.files[0] || null)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
+        />
+        <span className="block mt-1 text-xs text-gray-500">Imagens até 5 MB; vídeos até 50 MB.</span>
+      </label>
       
       <button
         type="submit"

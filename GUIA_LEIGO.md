@@ -1,7 +1,23 @@
 ﻿═══════════════════════════════════════════════════════════════════════════════
-GUIA DO LEIGO - Casos, Cousos e Outras Histórias
+GUIA DO LEIGO - Casos, Causos e Outras Histórias
 Do GitHub ao Deploy no Render (Passo a Passo Super Simples)
 ═══════════════════════════════════════════════════════════════════════════════
+
+## COMO O MURAL FUNCIONA (PARA QUALQUER PESSOA)
+
+Objetivo do mural:
+- Guardar histórias, aprendizados e lembranças para que não se percam.
+- Criar um espaço de memória coletiva que sirva de apoio para as próximas gerações.
+
+Como participar:
+- Ler histórias: qualquer pessoa pode ler.
+- Curtir histórias: qualquer pessoa pode reagir com emojis, sem precisar de login.
+- Enviar história: precisa entrar com usuário e senha.
+
+Regras de convivência:
+- Nesta fase, a interação do leitor é apenas por emojis (sem comentários em texto).
+- A plataforma aplica limites automáticos para evitar vandalismo em sequência.
+- Histórias enviadas passam por curadoria antes de aparecer no mural público.
 
 ## PASSO 1: CRIAR REPOSITÓRIO NO GITHUB
 
@@ -37,7 +53,7 @@ Do GitHub ao Deploy no Render (Passo a Passo Super Simples)
 ## PASSO 3: ENVIAR PROJETO PARA GITHUB
 
 1. Abra PowerShell na pasta do projeto:
-   C:\Users\celio\OneDrive\Área de Trabalho\Casos, Cousos e Outras Historias
+   C:\Users\celio\OneDrive\Área de Trabalho\Casos, Causos e Outras Historias
 
 2. Digite CADA LINHA (uma por vez):
 

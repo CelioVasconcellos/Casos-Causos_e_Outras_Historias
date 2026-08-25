@@ -22,10 +22,12 @@ class StoryUpdate(BaseModel):
     media_url: Optional[str] = Field(None, max_length=500)
     media_type: Optional[MediaType] = None
     status: Optional[StoryStatus] = None
+    moderation_note: Optional[str] = Field(None, max_length=1000)
 
 
 class StoryResponse(BaseModel):
     id: int
+    author_id: Optional[int]
     title: str
     author_name: str
     category: str
@@ -33,6 +35,7 @@ class StoryResponse(BaseModel):
     media_url: Optional[str]
     media_type: str
     status: str
+    moderation_note: Optional[str]
     created_at: datetime
     updated_at: datetime
 
@@ -79,3 +82,35 @@ class AdminResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ============ REACTION SCHEMAS ============
+class ReactionToggleRequest(BaseModel):
+    emoji: str = Field(..., min_length=1, max_length=8)
+
+
+class ReactionSummaryResponse(BaseModel):
+    story_id: int
+    totals: dict[str, int]
+    my_reactions: list[str]
+    total_count: int
+    changed_emoji: Optional[str] = None
+    changed_emoji_reacted: Optional[bool] = None
+
+
+class ReactionBlockCreate(BaseModel):
+    fingerprint_hash: Optional[str] = Field(None, min_length=64, max_length=64)
+    ip_hash: Optional[str] = Field(None, min_length=64, max_length=64)
+    reason: Optional[str] = Field(None, max_length=255)
+    hours: int = Field(default=24, ge=1, le=720)
+
+
+class PlatformCountersResponse(BaseModel):
+    unique_anonymous_visitors: int
+    active_logged_users: int
+    tracked_logged_users: int
+    active_window_minutes: int
+    visits_today: int
+    visits_last_7_days: int
+    visits_last_30_days: int
+    daily_visits_last_7_days: list[dict[str, int | str]]

@@ -1,13 +1,24 @@
-﻿from fastapi import APIRouter, Depends, HTTPException, status, Query
+﻿from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 from app.database import get_db
-from app.models import Story, StoryStatus, User
-from app.schemas import StoryCreate, StoryResponse, StoryUpdate
+from app.models import Story, StoryStatus, User, MediaType
+from app.schemas import StoryResponse
 from app.auth import get_current_user
+from app.utils.file_handler import validate_image, validate_video, delete_file
+from pathlib import Path
 from typing import List
 
 router = APIRouter(prefix="/api/stories", tags=["stories"])
+
+def save_media(media, content: bytes):
+    if media.content_type and media.content_type.startswith("image/"):
+        filepath, _ = validate_image(content, media.filename)
+        return f"/uploads/{Path(filepath).name}", MediaType.image
+    if media.content_type in {"video/mp4", "video/webm", "video/quicktime"}:
+        filepath, _ = validate_video(content, media.filename)
+        return f"/uploads/{Path(filepath).name}", MediaType.video
+    raise HTTPException(status_code=415, detail="Envie uma imagem ou vídeo compatível")
 
 @router.get("/", response_model=List[StoryResponse])
 def list_stories(
@@ -35,28 +46,90 @@ def list_stories(
     stories = query.order_by(Story.created_at.desc()).offset(skip).limit(limit).all()
     return stories
 
+@router.get("/mine", response_model=List[StoryResponse])
+def list_my_stories(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return db.query(Story).filter(Story.author_id == current_user.id).order_by(Story.created_at.desc()).all()
+
 @router.get("/{story_id}", response_model=StoryResponse)
 def get_story(story_id: int, db: Session = Depends(get_db)):
     story = db.query(Story).filter(
         and_(Story.id == story_id, Story.status == StoryStatus.approved)
     ).first()
-    
+
     if not story:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="História não encontrada")
-    
+
     return story
 
 @router.post("/", response_model=StoryResponse, status_code=status.HTTP_201_CREATED)
-def create_story(
-    story: StoryCreate,
+async def create_story(
+    title: str = Form(...),
+    author_name: str = Form(...),
+    category: str = Form("Geral"),
+    story_text: str = Form(...),
+    media: UploadFile | None = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    db_story = Story(**story.dict())
+    if len(title.strip()) < 5 or len(title) > 150:
+        raise HTTPException(status_code=422, detail="O título deve ter entre 5 e 150 caracteres")
+    if len(author_name.strip()) < 2 or len(author_name) > 100:
+        raise HTTPException(status_code=422, detail="O nome deve ter entre 2 e 100 caracteres")
+    if len(story_text.strip()) < 10:
+        raise HTTPException(status_code=422, detail="A história deve ter pelo menos 10 caracteres")
+
+    media_url = None
+    media_type = MediaType.none
+    if media and media.filename:
+        content = await media.read()
+        media_url, media_type = save_media(media, content)
+
+    db_story = Story(
+        title=title.strip(),
+        author_name=author_name.strip(),
+        category=category.strip() or "Geral",
+        story_text=story_text.strip(),
+        author_id=current_user.id,
+        media_url=media_url,
+        media_type=media_type,
+        status=StoryStatus.pending,
+    )
     db.add(db_story)
     db.commit()
     db.refresh(db_story)
     return db_story
+
+@router.put("/{story_id}", response_model=StoryResponse)
+async def resubmit_story(
+    story_id: int,
+    title: str = Form(...),
+    author_name: str = Form(...),
+    category: str = Form("Geral"),
+    story_text: str = Form(...),
+    media: UploadFile | None = File(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    story = db.query(Story).filter(Story.id == story_id, Story.author_id == current_user.id).first()
+    if not story or story.status != StoryStatus.needs_revision:
+        raise HTTPException(status_code=404, detail="História não disponível para correção")
+    story.title = title.strip()
+    story.author_name = author_name.strip()
+    story.category = category.strip() or "Geral"
+    story.story_text = story_text.strip()
+    story.status = StoryStatus.pending
+    story.moderation_note = None
+    if media and media.filename:
+        content = await media.read()
+        if story.media_url:
+            delete_file(str(Path("uploads") / Path(story.media_url).name))
+        story.media_url, story.media_type = save_media(media, content)
+    db.commit()
+    db.refresh(story)
+    return story
 
 @router.get("/categories/all", response_model=List[str])
 def get_categories(db: Session = Depends(get_db)):
