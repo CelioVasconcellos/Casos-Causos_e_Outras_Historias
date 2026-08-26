@@ -97,11 +97,38 @@ export default function Feed() {
 
     setReactionNotice('')
     setReactionBusyMap((previous) => ({ ...previous, [storyId]: true }))
+
+    // Atualizacao otimista: aplica a mudanca imediatamente na UI
+    setReactionMap((previous) => {
+      const current = previous[storyId] || { totals: {}, my_reactions: [] }
+      const alreadyMine = current.my_reactions.includes(emoji)
+      const newTotals = { ...current.totals }
+      newTotals[emoji] = Math.max(0, (newTotals[emoji] || 0) + (alreadyMine ? -1 : 1))
+      const newMine = alreadyMine
+        ? current.my_reactions.filter((e) => e !== emoji)
+        : [...current.my_reactions, emoji]
+      return {
+        ...previous,
+        [storyId]: {
+          ...current,
+          totals: newTotals,
+          my_reactions: newMine,
+          total_count: Object.values(newTotals).reduce((a, b) => a + b, 0),
+        },
+      }
+    })
+
     try {
       const { data } = await axios.post(`/api/stories/${storyId}/reactions`, { emoji })
+      // Confirma com a resposta do servidor (fonte da verdade)
       setReactionMap((previous) => ({ ...previous, [storyId]: data }))
     } catch (error) {
+      // Reverte a otimista em caso de erro: busca o estado real
       setReactionNotice(error.response?.data?.detail || 'Não foi possível registrar sua reação agora.')
+      try {
+        const { data } = await axios.get(`/api/stories/${storyId}/reactions`)
+        setReactionMap((previous) => ({ ...previous, [storyId]: data }))
+      } catch (_ignored) {}
     } finally {
       setReactionBusyMap((previous) => ({ ...previous, [storyId]: false }))
     }
