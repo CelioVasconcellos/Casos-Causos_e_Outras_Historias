@@ -12,13 +12,21 @@ from typing import List
 router = APIRouter(prefix="/api/stories", tags=["stories"])
 
 def save_media(media, content: bytes):
+    """Salva mídia e retorna a URL pública (local /uploads/... ou remota S3/R2)."""
     if media.content_type and media.content_type.startswith("image/"):
         filepath, _ = validate_image(content, media.filename)
-        return f"/uploads/{Path(filepath).name}", MediaType.image
+        return _to_public_url(filepath), MediaType.image
     if media.content_type in {"video/mp4", "video/webm", "video/quicktime"}:
         filepath, _ = validate_video(content, media.filename)
-        return f"/uploads/{Path(filepath).name}", MediaType.video
+        return _to_public_url(filepath), MediaType.video
     raise HTTPException(status_code=415, detail="Envie uma imagem ou vídeo compatível")
+
+
+def _to_public_url(filepath: str) -> str:
+    """Se o storage retornou URL completa (S3/R2), usa direto; senão, monta caminho local."""
+    if filepath.startswith("http://") or filepath.startswith("https://"):
+        return filepath
+    return f"/uploads/{Path(filepath).name}"
 
 @router.get("/", response_model=List[StoryResponse])
 def list_stories(
@@ -125,7 +133,10 @@ async def resubmit_story(
     if media and media.filename:
         content = await media.read()
         if story.media_url:
-            delete_file(str(Path("uploads") / Path(story.media_url).name))
+            if story.media_url.startswith("http://") or story.media_url.startswith("https://"):
+                delete_file(story.media_url)
+            else:
+                delete_file(str(Path("uploads") / Path(story.media_url).name))
         story.media_url, story.media_type = save_media(media, content)
     db.commit()
     db.refresh(story)

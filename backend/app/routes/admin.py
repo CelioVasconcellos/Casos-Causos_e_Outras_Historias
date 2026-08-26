@@ -5,7 +5,9 @@ from app.database import get_db
 from app.models import Story, StoryStatus, User, AdminUser
 from app.schemas import StoryResponse, StoryUpdate, AdminLogin, TokenResponse
 from app.auth import verify_password, get_password_hash, create_access_token, get_current_user
+from app.utils.file_handler import delete_file
 from datetime import timedelta
+from pathlib import Path
 from typing import List
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -72,7 +74,14 @@ def delete_story(
     story = db.query(Story).filter(Story.id == story_id).first()
     if not story:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="História não encontrada")
-    
+
+    # Remove também o arquivo de mídia do storage (local ou S3/R2)
+    if story.media_url:
+        if story.media_url.startswith("http://") or story.media_url.startswith("https://"):
+            delete_file(story.media_url)
+        else:
+            delete_file(str(Path("uploads") / Path(story.media_url).name))
+
     db.delete(story)
     db.commit()
     return None
