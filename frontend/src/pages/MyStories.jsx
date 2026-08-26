@@ -93,7 +93,7 @@ export default function MyStories() {
               )}
 
               <p className="mt-4 leading-relaxed text-slate-700">{story.story_text}</p>
-              {story.media_url && story.media_type === 'image' && <img src={resolveMediaUrl(story.media_url)} alt={story.title} className="mt-4 max-h-72 w-full rounded-xl object-cover" />}
+              {story.media_url && story.media_type === 'image' && <img src={resolveMediaUrl(story.media_url)} alt={story.title} className="mt-4 max-h-[32rem] w-full rounded-xl object-contain bg-gray-100" />}
               {story.media_url && story.media_type === 'video' && <video src={resolveMediaUrl(story.media_url)} controls preload="metadata" className="mt-4 max-h-72 w-full rounded-xl" />}
               {story.status === 'needs_revision' && (
                 <Link to="/enviar" state={{ storyToEdit: story }} className="mt-4 inline-block font-bold text-orange-700 hover:text-orange-900">

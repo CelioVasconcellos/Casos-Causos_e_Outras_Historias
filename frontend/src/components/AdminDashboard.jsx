@@ -175,7 +175,7 @@ export default function AdminDashboard() {
                 <img
                   src={resolveMediaUrl(story.media_url)}
                   alt={story.title}
-                  className="mb-4 max-h-96 w-full rounded-lg object-cover"
+                  className="mb-4 max-h-[32rem] w-full rounded-lg object-contain bg-gray-100"
                 />
               )}
               {story.media_url && story.media_type === 'video' && (

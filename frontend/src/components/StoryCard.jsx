@@ -31,7 +31,7 @@ export default function StoryCard({ story, reactionData, reactionPending, onTogg
       </p>
       
       {story.media_url && story.media_type === 'image' && (
-        <img src={mediaSrc} alt={story.title} className="w-full rounded-lg mb-3 max-h-96 object-cover" />
+        <img src={mediaSrc} alt={story.title} className="w-full rounded-lg mb-3 max-h-[32rem] object-contain bg-gray-100" />
       )}
       
       {story.media_url && story.media_type === 'video' && (
