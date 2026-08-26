@@ -16,15 +16,23 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
+# Limite do bcrypt: 72 bytes. Trunca em bytes sem quebrar caracteres UTF-8.
+BCRYPT_MAX_BYTES = 72
+
+
+def _truncate_password(password: str) -> str:
+    """Garante que a senha não exceda 72 bytes antes de ir ao bcrypt"""
+    return password.encode("utf-8")[:BCRYPT_MAX_BYTES].decode("utf-8", errors="ignore")
+
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verifica se a senha corresponde ao hash"""
-    return pwd_context.verify(plain_password, hashed_password)
+    return pwd_context.verify(_truncate_password(plain_password), hashed_password)
 
 
 def get_password_hash(password: str) -> str:
     """Cria hash seguro da senha"""
-    return pwd_context.hash(password)
+    return pwd_context.hash(_truncate_password(password))
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
