@@ -91,8 +91,8 @@ export default function AdminDashboard() {
 
   const deleteStory = async (id, title) => {
     const message = filter === 'approved'
-      ? `ATENÇÃO: "${title}" está PUBLICADA no mural e visível para todos.\n\nExcluir remove a história e a mídia definitivamente. Continuar?`
-      : `Excluir "${title}" definitivamente (incluindo a mídia)?`
+      ? `ATENÇÃO: "${title}" está PUBLICADA no mural.\n\nEla será removida do mural e guardada em Excluídas (recuperável). Continuar?`
+      : `Excluir "${title}"? Ela ficará na aba Excluídas e pode ser restaurada.`
     if (confirm(message)) {
       try {
         const token = localStorage.getItem('admin_token')
@@ -102,6 +102,33 @@ export default function AdminDashboard() {
         fetchStories()
       } catch (error) {
         console.error('Erro ao deletar')
+      }
+    }
+  }
+
+  const restoreStory = async (id) => {
+    try {
+      const token = localStorage.getItem('admin_token')
+      await axios.post(`/api/admin/stories/${id}/restore`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      fetchStories()
+    } catch (error) {
+      console.error('Erro ao restaurar')
+    }
+  }
+
+  const deletePermanently = async (id, title) => {
+    const message = `EXCLUSÃO DEFINITIVA de "${title}".\n\nIsso remove o registro E a mídia do armazenamento, sem possibilidade de recuperação. Continuar?`
+    if (confirm(message)) {
+      try {
+        const token = localStorage.getItem('admin_token')
+        await axios.delete(`/api/admin/stories/${id}/permanent`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        fetchStories()
+      } catch (error) {
+        console.error('Erro ao excluir definitivamente')
       }
     }
   }
@@ -150,14 +177,14 @@ export default function AdminDashboard() {
         </section>
       )}
       
-      <div className="mb-6 flex gap-2">
-        {['pending', 'needs_revision', 'approved'].map(status => (
+      <div className="mb-6 flex gap-2 flex-wrap">
+        {['pending', 'needs_revision', 'approved', 'deleted'].map(status => (
           <button
             key={status}
             onClick={() => setFilter(status)}
             className={`px-4 py-2 rounded-lg font-semibold ${filter === status ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
           >
-            {status === 'pending' ? 'Pendentes' : status === 'needs_revision' ? 'Correções' : 'Aprovadas'}
+            {status === 'pending' ? 'Pendentes' : status === 'needs_revision' ? 'Correções' : status === 'approved' ? 'Aprovadas' : 'Excluídas'}
           </button>
         ))}
       </div>
@@ -210,12 +237,29 @@ export default function AdminDashboard() {
                     </button>
                   </>
                 )}
-                <button
-                  onClick={() => deleteStory(story.id, story.title)}
-                  className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                >
-                  {filter === 'approved' ? 'Excluir do mural' : 'Deletar'}
-                </button>
+                {filter === 'deleted' ? (
+                  <>
+                    <button
+                      onClick={() => restoreStory(story.id)}
+                      className="bg-emerald-600 text-white px-3 py-1 rounded hover:bg-emerald-700"
+                    >
+                      Restaurar
+                    </button>
+                    <button
+                      onClick={() => deletePermanently(story.id, story.title)}
+                      className="bg-red-800 text-white px-3 py-1 rounded hover:bg-red-900"
+                    >
+                      Excluir definitivamente
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => deleteStory(story.id, story.title)}
+                    className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                  >
+                    {filter === 'approved' ? 'Excluir do mural' : 'Deletar'}
+                  </button>
+                )}
               </div>
             </div>
           ))}

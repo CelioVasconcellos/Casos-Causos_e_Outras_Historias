@@ -35,6 +35,25 @@ BOT_USER_AGENT_MARKERS = (
     "headlesschrome",
     "slurp",
     "mediapartners-google",
+    "postman",
+    "insomnia",
+    "httpie",
+    "lighthouse",
+    "pagespeed",
+    "gtmetrix",
+    "monitor",
+    "probe",
+    "check",
+    "statuscake",
+    "freshping",
+    "datadog",
+    "newrelic",
+    "facebookexternalhit",
+    "twitterbot",
+    "whatsapp",
+    "telegrambot",
+    "discordbot",
+    "slackbot",
 )
 
 
@@ -188,13 +207,21 @@ def register_visit(request: Request, response: Response, db: Session = Depends(g
     if _is_bot_user_agent(user_agent):
         return _summary(db)
 
+    # 2. So conta visita de quem JA tem o cookie de visitante.
+    # Bots/health-checks nao retem cookies entre requisicoes, entao cada ping pareceria
+    # um visitante novo. O browser real recebe o cookie na 1a carga e o envia nas proximas.
+    existing_cookie = request.cookies.get(VISITOR_COOKIE_NAME)
     visitor_id = _ensure_visitor_id(request, response)
+    if not existing_cookie:
+        # Primeira carga: apenas emite o cookie; a contagem acontece na proxima chamada.
+        return _summary(db)
+
     ip_prefix = _ip_prefix(_get_client_ip(request))
     visitor_hash = _hash_value(f"{visitor_id}|{ip_prefix}|{user_agent}")
 
     user_id = _get_user_id_from_auth_header(request)
 
-    # 2. Ignora visitas de administradores/moderadores: suas navegacoes nao contaminam as metricas
+    # 3. Ignora visitas de administradores/moderadores: suas navegacoes nao contaminam as metricas
     if user_id is not None:
         is_admin = db.query(AdminUser).filter(AdminUser.user_id == user_id).first() is not None
         if is_admin:

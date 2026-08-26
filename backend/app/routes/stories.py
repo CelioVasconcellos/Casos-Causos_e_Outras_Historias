@@ -36,7 +36,7 @@ def list_stories(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
 ):
-    query = db.query(Story).filter(Story.status == StoryStatus.approved)
+    query = db.query(Story).filter(Story.status == StoryStatus.approved, Story.deleted_at.is_(None))
     
     if search:
         search_term = f"%{search}%"
@@ -59,12 +59,12 @@ def list_my_stories(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return db.query(Story).filter(Story.author_id == current_user.id).order_by(Story.created_at.desc()).all()
+    return db.query(Story).filter(Story.author_id == current_user.id, Story.deleted_at.is_(None)).order_by(Story.created_at.desc()).all()
 
 @router.get("/{story_id}", response_model=StoryResponse)
 def get_story(story_id: int, db: Session = Depends(get_db)):
     story = db.query(Story).filter(
-        and_(Story.id == story_id, Story.status == StoryStatus.approved)
+        and_(Story.id == story_id, Story.status == StoryStatus.approved, Story.deleted_at.is_(None))
     ).first()
 
     if not story:

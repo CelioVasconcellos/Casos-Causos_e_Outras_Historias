@@ -6,7 +6,7 @@ from app.models import Story, StoryStatus, User, AdminUser
 from app.schemas import StoryResponse, StoryUpdate, AdminLogin, TokenResponse
 from app.auth import verify_password, get_password_hash, create_access_token, get_current_user
 from app.utils.file_handler import delete_file
-from datetime import timedelta
+from datetime import timedelta, datetime
 from pathlib import Path
 from typing import List
 
@@ -41,8 +41,12 @@ def list_all_stories(
     db: Session = Depends(get_db)
 ):
     query = db.query(Story)
-    if status_filter and status_filter in ["pending", "needs_revision", "approved"]:
-        query = query.filter(Story.status == status_filter)
+    if status_filter == "deleted":
+        query = query.filter(Story.deleted_at.isnot(None))
+    else:
+        query = query.filter(Story.deleted_at.is_(None))
+        if status_filter and status_filter in ["pending", "needs_revision", "approved"]:
+            query = query.filter(Story.status == status_filter)
     
     stories = query.order_by(Story.created_at.desc()).offset(skip).limit(limit).all()
     return stories
@@ -71,9 +75,45 @@ def delete_story(
     admin: AdminUser = Depends(verify_admin),
     db: Session = Depends(get_db)
 ):
-    story = db.query(Story).filter(Story.id == story_id).first()
+    """Soft delete: marca deleted_at. A história some de todas as listagens, mas
+    o registro e a mídia são mantidos para permitir restauração."""
+    story = db.query(Story).filter(Story.id == story_id, Story.deleted_at.is_(None)).first()
     if not story:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="História não encontrada")
+
+    story.deleted_at = datetime.utcnow()
+    db.commit()
+    return None
+
+
+@router.post("/stories/{story_id}/restore", response_model=StoryResponse)
+def restore_story(
+    story_id: int,
+    admin: AdminUser = Depends(verify_admin),
+    db: Session = Depends(get_db)
+):
+    """Restaura uma história excluída (soft delete), voltando ao status anterior."""
+    story = db.query(Story).filter(Story.id == story_id, Story.deleted_at.isnot(None)).first()
+    if not story:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="História excluída não encontrada")
+
+    story.deleted_at = None
+    db.commit()
+    db.refresh(story)
+    return story
+
+
+@router.delete("/stories/{story_id}/permanent", status_code=status.HTTP_204_NO_CONTENT)
+def delete_story_permanently(
+    story_id: int,
+    admin: AdminUser = Depends(verify_admin),
+    db: Session = Depends(get_db)
+):
+    """Exclusão DEFINITIVA (irreversível): remove registro e mídia do storage.
+    Só permitida para histórias já excluídas (deleted), para evitar acidentes."""
+    story = db.query(Story).filter(Story.id == story_id, Story.deleted_at.isnot(None)).first()
+    if not story:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="História excluída não encontrada")
 
     # Remove também o arquivo de mídia do storage (local ou S3/R2)
     if story.media_url:
