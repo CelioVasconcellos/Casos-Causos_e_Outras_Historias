@@ -1,5 +1,5 @@
 ﻿from jose import JWTError, jwt
-from passlib.context import CryptContext
+import bcrypt
 from datetime import datetime, timedelta
 from typing import Optional
 from fastapi import Depends, HTTPException, status
@@ -13,26 +13,22 @@ SECRET_KEY = os.getenv("JWT_SECRET", "sua_chave_secreta_muito_segura")
 ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
-# Limite do bcrypt: 72 bytes. Trunca em bytes sem quebrar caracteres UTF-8.
+# Limite do bcrypt: 72 bytes. Trunca em bytes antes de ir ao bcrypt.
 BCRYPT_MAX_BYTES = 72
 
 
-def _truncate_password(password: str) -> str:
-    """Garante que a senha não exceda 72 bytes antes de ir ao bcrypt"""
-    return password.encode("utf-8")[:BCRYPT_MAX_BYTES].decode("utf-8", errors="ignore")
+def get_password_hash(password: str) -> str:
+    """Cria hash seguro da senha (truncada em 72 bytes, limite do bcrypt)"""
+    pwd_bytes = password.encode("utf-8")[:BCRYPT_MAX_BYTES]
+    return bcrypt.hashpw(pwd_bytes, bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verifica se a senha corresponde ao hash"""
-    return pwd_context.verify(_truncate_password(plain_password), hashed_password)
-
-
-def get_password_hash(password: str) -> str:
-    """Cria hash seguro da senha"""
-    return pwd_context.hash(_truncate_password(password))
+    pwd_bytes = plain_password.encode("utf-8")[:BCRYPT_MAX_BYTES]
+    return bcrypt.checkpw(pwd_bytes, hashed_password.encode("utf-8"))
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
