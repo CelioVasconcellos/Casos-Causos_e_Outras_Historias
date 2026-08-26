@@ -15,6 +15,7 @@ export default function LoginForm() {
     try {
       const { data } = await axios.post('/api/auth/login', { username, password })
       localStorage.setItem('token', data.access_token)
+      localStorage.setItem('username', username)
       navigate('/')
     } catch (error) {
       setError('Credenciais inválidas')

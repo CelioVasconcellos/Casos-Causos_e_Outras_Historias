@@ -61,6 +61,7 @@ export default function App() {
                   onClick={() => {
                     localStorage.removeItem('token')
                     localStorage.removeItem('admin_token')
+                    localStorage.removeItem('username')
                     setIsAuthenticated(false)
                     setIsAdminAuthenticated(false)
                     window.location.href = '/'

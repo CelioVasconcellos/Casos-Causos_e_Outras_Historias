@@ -1,10 +1,13 @@
-﻿import { useState, useEffect } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import axios from 'axios'
+
+const UPLOAD_TIMEOUT_MS = 10 * 60 * 1000 // 10 minutos
+const STALL_WARNING_MS = 15 * 1000 // avisa apos 15s sem progresso
 
 export default function StoryForm({ onSuccess, storyToEdit = null }) {
   const [formData, setFormData] = useState({
     title: '',
-    author_name: '',
+    author_name: localStorage.getItem('username') || '',
     category: 'Geral',
     story_text: '',
   })
@@ -13,6 +16,9 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
   const [mediaFile, setMediaFile] = useState(null)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [slowConnection, setSlowConnection] = useState(false)
+  const lastProgressRef = useRef({ percent: 0, time: 0 })
+  const stallTimerRef = useRef(null)
 
   useEffect(() => {
     if (storyToEdit) {
@@ -36,6 +42,15 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
     setMessage('')
     setUploadProgress(0)
     setIsProcessing(false)
+    setSlowConnection(false)
+    lastProgressRef.current = { percent: 0, time: Date.now() }
+
+    // Watchdog: se ficar 15s sem nenhum progresso, avisa que a conexao esta lenta
+    stallTimerRef.current = window.setInterval(() => {
+      const { time } = lastProgressRef.current
+      if (Date.now() - time > STALL_WARNING_MS) setSlowConnection(true)
+    }, 1000)
+
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('admin_token')
       const payload = new FormData()
@@ -46,24 +61,36 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
       const method = storyToEdit ? 'put' : 'post'
       await axios[method](endpoint, payload, {
         headers: { Authorization: `Bearer ${token}` },
+        timeout: UPLOAD_TIMEOUT_MS,
         onUploadProgress: (progressEvent) => {
           if (!progressEvent.total) return
           const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          if (percent !== lastProgressRef.current.percent) {
+            lastProgressRef.current = { percent, time: Date.now() }
+            setSlowConnection(false)
+          }
           setUploadProgress(percent)
           if (percent >= 100) setIsProcessing(true)
         }
       })
       setMessage('Obrigado! Seu relato foi enviado para curadoria.')
-      setFormData({ title: '', author_name: '', category: 'Geral', story_text: '' })
+      setFormData({ title: '', author_name: localStorage.getItem('username') || '', category: 'Geral', story_text: '' })
       setMediaFile(null)
       setUploadProgress(0)
       setIsProcessing(false)
       e.target.reset()
       if (onSuccess) onSuccess()
     } catch (error) {
-      setMessage('Erro ao enviar. Tente novamente.')
+      if (error.code === 'ECONNABORTED') {
+        setMessage('O envio demorou demais e foi cancelado. Verifique sua internet, reduza o tamanho do arquivo e tente novamente.')
+      } else {
+        setMessage('Erro ao enviar. Tente novamente.')
+      }
       setUploadProgress(0)
       setIsProcessing(false)
+    } finally {
+      if (stallTimerRef.current) window.clearInterval(stallTimerRef.current)
+      setSlowConnection(false)
     }
     setLoading(false)
   }
@@ -75,12 +102,15 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
       <input
         type="text"
         name="author_name"
-        placeholder="Seu nome"
+        placeholder="Nome que assina a história"
         value={formData.author_name}
         onChange={handleChange}
         required
         className="w-full px-4 py-2 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
+      <p className="-mt-3 mb-4 text-xs text-gray-500">
+        Preenchido com seu usuário. Você pode alterar se preferir assinar de outra forma.
+      </p>
       
       <input
         type="text"
@@ -152,6 +182,11 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
           {mediaFile && mediaFile.size > 20 * 1024 * 1024 && !isProcessing && (
             <p className="mt-2 text-xs text-gray-500">
               Arquivo grande: o envio pode levar alguns minutos dependendo da sua internet. Não feche esta página.
+            </p>
+          )}
+          {slowConnection && !isProcessing && (
+            <p className="mt-2 text-xs font-semibold text-amber-600">
+              A conexão está lenta, mas o envio continua. Aguarde — se demorar mais de 10 minutos, cancelaremos com aviso.
             </p>
           )}
         </div>
