@@ -74,6 +74,7 @@ export default function App() {
               <>
                 <a href="/login" className="menu-link menu-link-quiet">Entrar</a>
                 <a href="/register" className="menu-link menu-link-accent">Cadastrar</a>
+                <a href="/admin/login" className="menu-link menu-link-quiet" title="Acesso da equipe de curadoria">Curadoria</a>
               </>
             )}
           </div>
