@@ -2,6 +2,8 @@
 
 Plataforma comunitária para compartilhamento de histórias e narrativas em formato de mural digital.
 
+<!-- Teste de auto-deploy Render: 2026-08-26 -->
+
 ## 🎯 Visão
 
 Um espaço acolhedor onde membros da comunidade podem compartilhar suas histórias, experiências e aprendizados em um ambiente moderado e respeitoso.
