@@ -5,10 +5,32 @@ export default function AdminDashboard() {
   const [stories, setStories] = useState([])
   const [filter, setFilter] = useState('pending')
   const [loading, setLoading] = useState(false)
+  const [platformCounters, setPlatformCounters] = useState(null)
 
   useEffect(() => {
     fetchStories()
   }, [filter])
+
+  useEffect(() => {
+    const fetchCounters = async () => {
+      try {
+        const { data } = await axios.get('/api/stats/summary')
+        setPlatformCounters(data)
+      } catch (_ignored) {
+        // Silencia falhas de telemetria no painel.
+      }
+    }
+
+    fetchCounters()
+    const intervalId = window.setInterval(fetchCounters, 60 * 1000)
+    return () => window.clearInterval(intervalId)
+  }, [])
+
+  const formatDayLabel = (isoDate) => {
+    if (!isoDate) return '--'
+    const [year, month, day] = isoDate.split('-')
+    return `${day}/${month}`
+  }
 
   const fetchStories = async () => {
     setLoading(true)
@@ -72,6 +94,28 @@ export default function AdminDashboard() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">Painel de Moderação</h1>
+
+      {platformCounters && (
+        <section className="platform-counters mb-8">
+          <h2 className="text-lg font-semibold mb-3">Visitas da plataforma</h2>
+          <p><strong>{platformCounters.unique_anonymous_visitors}</strong> visitantes únicos sem login</p>
+          <p><strong>{platformCounters.active_logged_users}</strong> usuários logados ativos (janela de {platformCounters.active_window_minutes} min)</p>
+          <p><strong>{platformCounters.tracked_logged_users}</strong> usuários logados já registrados na plataforma</p>
+          <p><strong>{platformCounters.visits_today}</strong> visitas únicas hoje</p>
+          <p><strong>{platformCounters.visits_last_7_days}</strong> visitas únicas nos últimos 7 dias</p>
+          <p><strong>{platformCounters.visits_last_30_days}</strong> visitas únicas nos últimos 30 dias</p>
+          {platformCounters.daily_visits_last_7_days.length > 0 && (
+            <div className="daily-visit-list" aria-label="Visitas diárias dos últimos 7 dias">
+              {platformCounters.daily_visits_last_7_days.map((item) => (
+                <div key={item.date} className="daily-visit-item">
+                  <span>{formatDayLabel(item.date)}</span>
+                  <strong>{item.count}</strong>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
       
       <div className="mb-6 flex gap-2">
         {['pending', 'needs_revision', 'approved'].map(status => (

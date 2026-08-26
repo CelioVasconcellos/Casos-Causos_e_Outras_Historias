@@ -40,16 +40,6 @@ export default function Feed() {
   const [reactionMap, setReactionMap] = useState({})
   const [reactionBusyMap, setReactionBusyMap] = useState({})
   const [reactionNotice, setReactionNotice] = useState('')
-  const [platformCounters, setPlatformCounters] = useState({
-    unique_anonymous_visitors: 0,
-    active_logged_users: 0,
-    tracked_logged_users: 0,
-    active_window_minutes: 15,
-    visits_today: 0,
-    visits_last_7_days: 0,
-    visits_last_30_days: 0,
-    daily_visits_last_7_days: [],
-  })
   const [search, setSearch] = useState('')
   const [author, setAuthor] = useState('')
   const [title, setTitle] = useState('')
@@ -63,21 +53,6 @@ export default function Feed() {
     fetchStories()
     fetchCategories()
   }, [search, author, title, category, dateFrom, dateTo])
-
-  useEffect(() => {
-    const fetchCounters = async () => {
-      try {
-        const { data } = await axios.get('/api/stats/summary')
-        setPlatformCounters(data)
-      } catch (_ignored) {
-        // Silencia falhas de telemetria para nao quebrar UX do mural.
-      }
-    }
-
-    fetchCounters()
-    const intervalId = window.setInterval(fetchCounters, 60 * 1000)
-    return () => window.clearInterval(intervalId)
-  }, [])
 
   const fetchStories = async () => {
     setLoading(true)
@@ -163,12 +138,6 @@ export default function Feed() {
     }
   }
 
-  const formatDayLabel = (isoDate) => {
-    if (!isoDate) return '--'
-    const [year, month, day] = isoDate.split('-')
-    return `${day}/${month}`
-  }
-
   return (
     <div className="feed-page min-h-screen py-8">
       <div className="max-w-4xl mx-auto px-4">
@@ -188,24 +157,6 @@ export default function Feed() {
             <li>Reações abusivas em sequência podem ser limitadas temporariamente.</li>
           </ul>
           <p className="participation-foot">Ao continuar, você concorda em usar o mural com respeito às memórias compartilhadas.</p>
-          <div className="platform-counters">
-            <p><strong>{platformCounters.unique_anonymous_visitors}</strong> visitantes únicos sem login</p>
-            <p><strong>{platformCounters.active_logged_users}</strong> usuários logados ativos (janela de {platformCounters.active_window_minutes} min)</p>
-            <p><strong>{platformCounters.tracked_logged_users}</strong> usuários logados já registrados na plataforma</p>
-            <p><strong>{platformCounters.visits_today}</strong> visitas únicas hoje</p>
-            <p><strong>{platformCounters.visits_last_7_days}</strong> visitas únicas nos últimos 7 dias</p>
-            <p><strong>{platformCounters.visits_last_30_days}</strong> visitas únicas nos últimos 30 dias</p>
-            {platformCounters.daily_visits_last_7_days.length > 0 && (
-              <div className="daily-visit-list" aria-label="Visitas diárias dos últimos 7 dias">
-                {platformCounters.daily_visits_last_7_days.map((item) => (
-                  <div key={item.date} className="daily-visit-item">
-                    <span>{formatDayLabel(item.date)}</span>
-                    <strong>{item.count}</strong>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
           {reactionNotice && <p className="reaction-notice">{reactionNotice}</p>}
         </section>
         
