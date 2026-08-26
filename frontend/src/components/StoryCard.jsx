@@ -1,8 +1,21 @@
-﻿const EMOJI_ORDER = ['❤️', '🙏', '👏', '😮', '😢', '🌟']
+﻿import { useState } from 'react'
+
+const EMOJI_ORDER = ['❤️', '🙏', '👏', '😮', '😢', '🌟']
+const API_BASE_URL = import.meta.env.VITE_API_URL || ''
+
+function resolveMediaUrl(mediaUrl) {
+  if (!mediaUrl) return ''
+  // URL absoluta (storage externo como R2/S3) já vem pronta
+  if (mediaUrl.startsWith('http://') || mediaUrl.startsWith('https://')) return mediaUrl
+  // Caminho relativo /uploads/... aponta para o backend
+  return `${API_BASE_URL}${mediaUrl}`
+}
 
 export default function StoryCard({ story, reactionData, reactionPending, onToggleReaction }) {
+  const [expanded, setExpanded] = useState(false)
   const totals = reactionData?.totals || {}
   const myReactions = new Set(reactionData?.my_reactions || [])
+  const mediaSrc = resolveMediaUrl(story.media_url)
 
   return (
     <article className={`story-card story-card-${story.media_type || 'text'} mb-4`}>
@@ -18,23 +31,27 @@ export default function StoryCard({ story, reactionData, reactionPending, onTogg
       </p>
       
       {story.media_url && story.media_type === 'image' && (
-        <img src={story.media_url} alt={story.title} className="w-full rounded-lg mb-3 max-h-96 object-cover" />
+        <img src={mediaSrc} alt={story.title} className="w-full rounded-lg mb-3 max-h-96 object-cover" />
       )}
       
       {story.media_url && story.media_type === 'video' && (
-        <video src={story.media_url} controls className="w-full rounded-lg mb-3 max-h-96" />
+        <video src={mediaSrc} controls preload="metadata" className="w-full rounded-lg mb-3 max-h-96" />
       )}
       
-      <p className="story-copy leading-relaxed">
-        {story.story_text.length > 300 
-          ? story.story_text.substring(0, 300) + '...' 
-          : story.story_text
+      <p className="story-copy leading-relaxed whitespace-pre-line">
+        {expanded || story.story_text.length <= 300
+          ? story.story_text
+          : story.story_text.substring(0, 300) + '...'
         }
       </p>
       
       {story.story_text.length > 300 && (
-        <button className="read-more mt-3 font-semibold">
-          Ler mais
+        <button
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          className="read-more mt-3 font-semibold"
+        >
+          {expanded ? 'Ler menos' : 'Ler mais'}
         </button>
       )}
 

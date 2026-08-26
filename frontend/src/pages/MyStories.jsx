@@ -14,6 +14,14 @@ const statusStyles = {
   approved: 'bg-emerald-100 text-emerald-800',
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || ''
+
+function resolveMediaUrl(mediaUrl) {
+  if (!mediaUrl) return ''
+  if (mediaUrl.startsWith('http://') || mediaUrl.startsWith('https://')) return mediaUrl
+  return `${API_BASE_URL}${mediaUrl}`
+}
+
 export default function MyStories() {
   const [stories, setStories] = useState([])
   const [loading, setLoading] = useState(true)
@@ -85,8 +93,8 @@ export default function MyStories() {
               )}
 
               <p className="mt-4 leading-relaxed text-slate-700">{story.story_text}</p>
-              {story.media_url && story.media_type === 'image' && <img src={story.media_url} alt={story.title} className="mt-4 max-h-72 w-full rounded-xl object-cover" />}
-              {story.media_url && story.media_type === 'video' && <video src={story.media_url} controls className="mt-4 max-h-72 w-full rounded-xl" />}
+              {story.media_url && story.media_type === 'image' && <img src={resolveMediaUrl(story.media_url)} alt={story.title} className="mt-4 max-h-72 w-full rounded-xl object-cover" />}
+              {story.media_url && story.media_type === 'video' && <video src={resolveMediaUrl(story.media_url)} controls preload="metadata" className="mt-4 max-h-72 w-full rounded-xl" />}
               {story.status === 'needs_revision' && (
                 <Link to="/enviar" state={{ storyToEdit: story }} className="mt-4 inline-block font-bold text-orange-700 hover:text-orange-900">
                   Corrigir e reenviar
