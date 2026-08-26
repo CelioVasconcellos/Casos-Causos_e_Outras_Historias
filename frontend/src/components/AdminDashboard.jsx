@@ -1,6 +1,36 @@
 ﻿import { useState, useEffect } from 'react'
 import axios from 'axios'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || ''
+
+function resolveMediaUrl(mediaUrl) {
+  if (!mediaUrl) return ''
+  if (mediaUrl.startsWith('http://') || mediaUrl.startsWith('https://')) return mediaUrl
+  return `${API_BASE_URL}${mediaUrl}`
+}
+
+function AdminStoryText({ text }) {
+  const [expanded, setExpanded] = useState(false)
+  if (!text) return null
+  if (text.length <= 300) {
+    return <p className="text-gray-700 mb-4 whitespace-pre-line">{text}</p>
+  }
+  return (
+    <>
+      <p className="text-gray-700 mb-2 whitespace-pre-line">
+        {expanded ? text : text.substring(0, 300) + '...'}
+      </p>
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="mb-4 text-sm font-semibold text-blue-600 hover:text-blue-800"
+      >
+        {expanded ? 'Ler menos' : 'Ler mais'}
+      </button>
+    </>
+  )
+}
+
 export default function AdminDashboard() {
   const [stories, setStories] = useState([])
   const [filter, setFilter] = useState('pending')
@@ -59,8 +89,11 @@ export default function AdminDashboard() {
     }
   }
 
-  const deleteStory = async (id) => {
-    if (confirm('Tem certeza que deseja deletar?')) {
+  const deleteStory = async (id, title) => {
+    const message = filter === 'approved'
+      ? `ATENÇÃO: "${title}" está PUBLICADA no mural e visível para todos.\n\nExcluir remove a história e a mídia definitivamente. Continuar?`
+      : `Excluir "${title}" definitivamente (incluindo a mídia)?`
+    if (confirm(message)) {
       try {
         const token = localStorage.getItem('admin_token')
         await axios.delete(`/api/admin/stories/${id}`, {
@@ -137,7 +170,24 @@ export default function AdminDashboard() {
             <div key={story.id} className="bg-white p-4 rounded-lg shadow-md">
               <h3 className="font-bold text-lg">{story.title}</h3>
               <p className="text-sm text-gray-600 mb-3">{story.author_name} • {story.category}</p>
-              <p className="text-gray-700 mb-4">{story.story_text.substring(0, 200)}...</p>
+
+              {story.media_url && story.media_type === 'image' && (
+                <img
+                  src={resolveMediaUrl(story.media_url)}
+                  alt={story.title}
+                  className="mb-4 max-h-96 w-full rounded-lg object-cover"
+                />
+              )}
+              {story.media_url && story.media_type === 'video' && (
+                <video
+                  src={resolveMediaUrl(story.media_url)}
+                  controls
+                  preload="metadata"
+                  className="mb-4 max-h-96 w-full rounded-lg"
+                />
+              )}
+
+              <AdminStoryText text={story.story_text} />
               {story.moderation_note && (
                 <p className="mb-4 rounded bg-yellow-50 p-3 text-sm text-yellow-800">
                   Orientação ao autor: {story.moderation_note}
@@ -161,10 +211,10 @@ export default function AdminDashboard() {
                   </>
                 )}
                 <button
-                  onClick={() => deleteStory(story.id)}
-                  className="bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700"
+                  onClick={() => deleteStory(story.id, story.title)}
+                  className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
                 >
-                  Deletar
+                  {filter === 'approved' ? 'Excluir do mural' : 'Deletar'}
                 </button>
               </div>
             </div>
