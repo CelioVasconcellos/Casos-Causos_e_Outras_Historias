@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import ALGORITHM, SECRET_KEY
 from app.database import get_db
-from app.models import AnonymousVisitor, DailyVisit, LoggedUserPresence
+from app.models import AdminUser, AnonymousVisitor, DailyVisit, LoggedUserPresence
 from app.schemas import PlatformCountersResponse
 
 router = APIRouter(prefix="/api/stats", tags=["stats"])
@@ -18,6 +18,30 @@ VISITOR_COOKIE_NAME = "ccoh_visitor"
 VISITOR_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 ACTIVE_WINDOW_MINUTES = 15
 COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false").lower() == "true"
+
+# User-agents de bots, crawlers e health-checks que NAO devem contar como visita real
+BOT_USER_AGENT_MARKERS = (
+    "bot",
+    "crawler",
+    "spider",
+    "render",
+    "uptimerobot",
+    "pingdom",
+    "healthcheck",
+    "curl",
+    "wget",
+    "python-requests",
+    "go-http-client",
+    "headlesschrome",
+    "slurp",
+    "mediapartners-google",
+)
+
+
+def _is_bot_user_agent(user_agent: str) -> bool:
+    """Detecta se o user-agent pertence a um bot, crawler ou health-check"""
+    ua_lower = user_agent.lower()
+    return any(marker in ua_lower for marker in BOT_USER_AGENT_MARKERS)
 
 
 def _hash_value(value: str) -> str:
@@ -158,12 +182,24 @@ def _summary(db: Session) -> PlatformCountersResponse:
 
 @router.post("/visit", response_model=PlatformCountersResponse)
 def register_visit(request: Request, response: Response, db: Session = Depends(get_db)):
+    user_agent = request.headers.get("user-agent", "unknown")[:200]
+
+    # 1. Ignora bots, crawlers e health-checks: retorna o resumo sem registrar nada
+    if _is_bot_user_agent(user_agent):
+        return _summary(db)
+
     visitor_id = _ensure_visitor_id(request, response)
     ip_prefix = _ip_prefix(_get_client_ip(request))
-    user_agent = request.headers.get("user-agent", "unknown")[:200]
     visitor_hash = _hash_value(f"{visitor_id}|{ip_prefix}|{user_agent}")
 
     user_id = _get_user_id_from_auth_header(request)
+
+    # 2. Ignora visitas de administradores/moderadores: suas navegacoes nao contaminam as metricas
+    if user_id is not None:
+        is_admin = db.query(AdminUser).filter(AdminUser.user_id == user_id).first() is not None
+        if is_admin:
+            return _summary(db)
+
     if user_id is None:
         _record_anonymous_visitor(visitor_hash, db)
         _record_daily_visit(visitor_hash, "anonymous", db)
