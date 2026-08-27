@@ -3,11 +3,12 @@ import getpass
 from app.auth import get_password_hash
 from app.database import Base, SessionLocal, engine
 from app.models import AdminUser, User
+from sqlalchemy import func
 
 
 def main():
     Base.metadata.create_all(bind=engine)
-    username = input('Usuário do moderador: ').strip()
+    username = input('Usuário do moderador: ').strip().lower()
     password = getpass.getpass('Senha do moderador: ')
 
     if len(username) < 3 or len(password) < 6:
@@ -15,12 +16,13 @@ def main():
 
     db = SessionLocal()
     try:
-        user = db.query(User).filter(User.username == username).first()
+        user = db.query(User).filter(func.lower(User.username) == username).first()
         if not user:
             user = User(username=username, password_hash=get_password_hash(password))
             db.add(user)
             db.flush()
         else:
+            user.username = username
             user.password_hash = get_password_hash(password)
 
         admin = db.query(AdminUser).filter(AdminUser.user_id == user.id).first()

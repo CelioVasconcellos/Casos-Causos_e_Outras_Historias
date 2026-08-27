@@ -1,6 +1,6 @@
 ﻿from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
+from sqlalchemy import and_, func
 from app.database import get_db
 from app.models import Story, StoryStatus, User, AdminUser
 from app.schemas import StoryResponse, StoryUpdate, AdminLogin, TokenResponse
@@ -9,8 +9,10 @@ from app.utils.file_handler import delete_file
 from datetime import timedelta, datetime
 from pathlib import Path
 from typing import List
+import logging
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
+logger = logging.getLogger(__name__)
 
 # Verificar se usuário é admin
 def verify_admin(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -21,12 +23,19 @@ def verify_admin(current_user: User = Depends(get_current_user), db: Session = D
 
 @router.post("/login", response_model=TokenResponse)
 def admin_login(credentials: AdminLogin, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == credentials.username).first()
-    if not user or not verify_password(credentials.password, user.password_hash):
+    username = credentials.username.strip().lower()
+    logger.info("Tentativa de login administrativo: username=%s", username)
+    user = db.query(User).filter(func.lower(User.username) == username).first()
+    if not user:
+        logger.warning("Login administrativo falhou: usuário não encontrado username=%s", username)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais inválidas")
+    if not verify_password(credentials.password, user.password_hash):
+        logger.warning("Login administrativo falhou: hash de senha não corresponde username=%s user_id=%s", username, user.id)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciais inválidas")
     
     admin = db.query(AdminUser).filter(AdminUser.user_id == user.id).first()
     if not admin:
+        logger.warning("Login administrativo falhou: usuário não é admin username=%s user_id=%s", username, user.id)
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Não é admin")
     
     access_token = create_access_token(data={"sub": user.username, "user_id": user.id})
