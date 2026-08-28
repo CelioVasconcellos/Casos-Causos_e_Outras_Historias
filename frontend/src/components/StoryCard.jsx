@@ -1,5 +1,6 @@
 ﻿import { useEffect, useRef, useState } from 'react'
 import axios from 'axios'
+import EmojiPicker from 'emoji-picker-react'
 
 const EMOJI_ORDER = ['❤️', '🙏', '👏', '😮', '😢', '🌟']
 const API_BASE_URL = import.meta.env.VITE_API_URL || ''
@@ -18,7 +19,9 @@ export default function StoryCard({ story, reactionData, reactionPending, onTogg
   const [commentText, setCommentText] = useState('')
   const [commentMessage, setCommentMessage] = useState('')
   const [commentLoading, setCommentLoading] = useState(false)
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false)
   const cardRef = useRef(null)
+  const commentInputRef = useRef(null)
   const totals = reactionData?.totals || {}
   const myReactions = new Set(reactionData?.my_reactions || [])
   const mediaSrc = resolveMediaUrl(story.media_url)
@@ -68,6 +71,21 @@ export default function StoryCard({ story, reactionData, reactionPending, onTogg
     } finally {
       setCommentLoading(false)
     }
+  }
+
+  const addEmoji = (emojiData) => {
+    const input = commentInputRef.current
+    const cursorStart = input?.selectionStart ?? commentText.length
+    const cursorEnd = input?.selectionEnd ?? commentText.length
+    const nextText = `${commentText.slice(0, cursorStart)}${emojiData.emoji}${commentText.slice(cursorEnd)}`
+    setCommentText(nextText)
+    setEmojiPickerOpen(false)
+    window.requestAnimationFrame(() => {
+      if (!input) return
+      const nextCursor = cursorStart + emojiData.emoji.length
+      input.focus()
+      input.setSelectionRange(nextCursor, nextCursor)
+    })
   }
 
   return (
@@ -155,6 +173,7 @@ export default function StoryCard({ story, reactionData, reactionPending, onTogg
           <label className="block text-sm font-semibold text-slate-700" htmlFor={`comment-${story.id}`}>Acrescente seu ponto de vista</label>
           <textarea
             id={`comment-${story.id}`}
+            ref={commentInputRef}
             value={commentText}
             onChange={(event) => setCommentText(event.target.value)}
             placeholder="Escreva um comentário com pelo menos 10 caracteres..."
@@ -162,6 +181,22 @@ export default function StoryCard({ story, reactionData, reactionPending, onTogg
             maxLength="2000"
             className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           />
+          <div className="relative mt-2">
+            <button
+              type="button"
+              onClick={() => setEmojiPickerOpen(open => !open)}
+              aria-expanded={emojiPickerOpen}
+              aria-controls={`emoji-picker-${story.id}`}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              😀 Adicionar emoji
+            </button>
+            {emojiPickerOpen && (
+              <div id={`emoji-picker-${story.id}`} className="absolute bottom-full left-0 z-10 mb-2 max-w-full overflow-hidden rounded-lg shadow-lg">
+                <EmojiPicker onEmojiClick={addEmoji} width={320} height={380} lazyLoadEmojis previewConfig={{ showPreview: false }} />
+              </div>
+            )}
+          </div>
           <button type="submit" disabled={commentLoading} className="mt-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:bg-slate-400">
             {commentLoading ? 'Enviando...' : 'Enviar comentário'}
           </button>
