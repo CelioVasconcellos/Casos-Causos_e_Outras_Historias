@@ -69,6 +69,14 @@ def validate_image(file_content: bytes, filename: str) -> tuple:
     try:
         img = Image.open(io.BytesIO(file_content))
         img.thumbnail((1200, 1200))
+        if img.mode in ("RGBA", "LA", "P"):
+            background = Image.new("RGB", img.size, "white")
+            if img.mode == "P":
+                img = img.convert("RGBA")
+            background.paste(img, mask=img.getchannel("A") if img.mode == "RGBA" else None)
+            img = background
+        elif img.mode != "RGB":
+            img = img.convert("RGB")
         filename_clean = f"img_{os.urandom(8).hex()}_{Path(filename).stem}.jpg"
 
         if USE_S3:
