@@ -1,7 +1,7 @@
 ﻿from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional
-from app.models import StoryStatus, MediaType
+from app.models import StoryStatus, MediaType, CommentStatus
 
 
 # ============ STORY SCHEMAS ============
@@ -34,6 +34,32 @@ class StoryResponse(BaseModel):
     story_text: str
     media_url: Optional[str]
     media_type: str
+    status: str
+    moderation_note: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+    deleted_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class CommentCreate(BaseModel):
+    comment_text: str = Field(..., min_length=10, max_length=2000)
+
+
+class CommentUpdate(BaseModel):
+    comment_text: Optional[str] = Field(None, min_length=10, max_length=2000)
+    status: Optional[CommentStatus] = None
+    moderation_note: Optional[str] = Field(None, max_length=1000)
+
+
+class CommentResponse(BaseModel):
+    id: int
+    story_id: int
+    author_id: int
+    author_name: str
+    comment_text: str
     status: str
     moderation_note: Optional[str]
     created_at: datetime

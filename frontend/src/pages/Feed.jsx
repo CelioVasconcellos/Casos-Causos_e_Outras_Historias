@@ -90,17 +90,10 @@ export default function Feed() {
     }
 
     try {
-      const [{ data: viewsData }, { data }] = await Promise.all([
-        axios.post('/api/stories/views/bulk', null, {
-          params: { story_ids: realStories.map((story) => story.id) },
-          paramsSerializer: { indexes: null },
-        }),
-        axios.get('/api/stories/reactions/bulk', {
-          params: { story_ids: realStories.map((story) => story.id) },
-          paramsSerializer: { indexes: null },
-        }),
-      ])
-      const viewsByStory = Object.fromEntries((viewsData.items || []).map((item) => [item.story_id, item.views]))
+      const { data } = await axios.get('/api/stories/reactions/bulk', {
+        params: { story_ids: realStories.map((story) => story.id) },
+        paramsSerializer: { indexes: null },
+      })
       const nextMap = {}
       for (const story of realStories) {
         nextMap[story.id] = createEmptyReactionSummary(story.id)
@@ -113,12 +106,32 @@ export default function Feed() {
             ...createEmptyReactionSummary(item.story_id).totals,
             ...(item.totals || {}),
           },
-          views: viewsByStory[item.story_id] || 0,
+          views: item.views || 0,
         }
       }
       setReactionMap(nextMap)
     } catch (_ignored) {
       setReactionMap({})
+    }
+  }
+
+  const registerStoryView = async (storyId) => {
+    try {
+      const { data } = await axios.post('/api/stories/views/bulk', null, {
+        params: { story_ids: storyId },
+      })
+      const viewItem = data.items?.find((item) => item.story_id === storyId)
+      if (viewItem) {
+        setReactionMap((previous) => ({
+          ...previous,
+          [storyId]: {
+            ...(previous[storyId] || createEmptyReactionSummary(storyId)),
+            views: viewItem.views,
+          },
+        }))
+      }
+    } catch (_ignored) {
+      // A falha no contador não impede a leitura ou a reação.
     }
   }
 
@@ -275,6 +288,7 @@ export default function Feed() {
                   reactionData={reactionMap[story.id]}
                   reactionPending={reactionBusyMap[story.id]}
                   onToggleReaction={toggleReaction}
+                  onVisible={registerStoryView}
                 />
               ))}
             </div>

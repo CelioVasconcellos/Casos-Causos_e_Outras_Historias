@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 import os
 from app.database import engine, Base
-from app.routes import stories, users, admin, reactions, stats
+from app.routes import stories, users, admin, reactions, stats, comments
 
 
 def _parse_cors_origins() -> list[str]:
@@ -45,6 +45,7 @@ app.include_router(users.router)
 app.include_router(admin.router)
 app.include_router(reactions.router)
 app.include_router(stats.router)
+app.include_router(comments.router)
 
 @app.get("/health")
 def health_check():

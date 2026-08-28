@@ -10,6 +10,12 @@ class StoryStatus(str, enum.Enum):
     approved = "approved"
 
 
+class CommentStatus(str, enum.Enum):
+    pending = "pending"
+    needs_revision = "needs_revision"
+    approved = "approved"
+
+
 class MediaType(str, enum.Enum):
     none = "none"
     image = "image"
@@ -33,6 +39,21 @@ class Story(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     deleted_at = Column(DateTime, nullable=True, index=True)  # soft delete: preenchido quando excluída
+
+
+class Comment(Base):
+    __tablename__ = "comments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    story_id = Column(Integer, ForeignKey("stories.id", ondelete="CASCADE"), nullable=False, index=True)
+    author_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    author_name = Column(String(100), nullable=False)
+    comment_text = Column(Text, nullable=False)
+    status = Column(Enum(CommentStatus), default=CommentStatus.pending, nullable=False)
+    moderation_note = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    deleted_at = Column(DateTime, nullable=True, index=True)
 
 
 class User(Base):

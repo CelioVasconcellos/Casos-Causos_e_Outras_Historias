@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect } from 'react'
 import axios from 'axios'
+import AdminComments from './AdminComments'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || ''
 
@@ -36,6 +37,7 @@ export default function AdminDashboard() {
   const [filter, setFilter] = useState('pending')
   const [loading, setLoading] = useState(false)
   const [platformCounters, setPlatformCounters] = useState(null)
+  const [showComments, setShowComments] = useState(false)
 
   useEffect(() => {
     fetchStories()
@@ -171,6 +173,13 @@ export default function AdminDashboard() {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">Painel de Moderação</h1>
+
+      <div className="mb-6 flex gap-2">
+        <button onClick={() => setShowComments(false)} className={`rounded-lg px-4 py-2 font-semibold ${!showComments ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>Histórias</button>
+        <button onClick={() => setShowComments(true)} className={`rounded-lg px-4 py-2 font-semibold ${showComments ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>Comentários</button>
+      </div>
+
+      {showComments ? <AdminComments /> : <>
 
       {platformCounters && (
         <section className="platform-counters mb-8">
@@ -311,6 +320,7 @@ export default function AdminDashboard() {
           ))}
         </div>
       )}
+      </>}
     </div>
   )
 }

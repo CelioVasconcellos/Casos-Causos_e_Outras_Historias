@@ -26,15 +26,20 @@ export default function MyStories() {
   const [stories, setStories] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [comments, setComments] = useState([])
+  const [editingCommentId, setEditingCommentId] = useState(null)
+  const [commentDraft, setCommentDraft] = useState('')
 
   useEffect(() => {
     const fetchStories = async () => {
       try {
         const token = localStorage.getItem('token') || localStorage.getItem('admin_token')
-        const { data } = await axios.get('/api/stories/mine', {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        setStories(data)
+        const [storiesResponse, commentsResponse] = await Promise.all([
+          axios.get('/api/stories/mine', { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get('/api/comments/mine', { headers: { Authorization: `Bearer ${token}` } }),
+        ])
+        setStories(storiesResponse.data)
+        setComments(commentsResponse.data)
       } catch (requestError) {
         setError('Não foi possível carregar suas histórias.')
       } finally {
@@ -44,6 +49,20 @@ export default function MyStories() {
 
     fetchStories()
   }, [])
+
+  const resubmitComment = async (commentId) => {
+    try {
+      const token = localStorage.getItem('token') || localStorage.getItem('admin_token')
+      const { data } = await axios.put(`/api/comments/${commentId}`, { comment_text: commentDraft }, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      setComments(previous => previous.map(comment => comment.id === commentId ? data : comment))
+      setEditingCommentId(null)
+      setCommentDraft('')
+    } catch (requestError) {
+      setError('Não foi possível reenviar o comentário.')
+    }
+  }
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10">
@@ -101,6 +120,22 @@ export default function MyStories() {
                   Corrigir e reenviar
                 </Link>
               )}
+              {comments.filter(comment => comment.story_id === story.id).map(comment => (
+                <div key={comment.id} className="mt-5 border-t border-slate-200 pt-4">
+                  <p className="text-sm font-bold text-slate-700">Seu comentário · {comment.status === 'pending' ? 'Aguardando análise' : comment.status === 'needs_revision' ? 'Correção solicitada' : comment.status === 'approved' ? 'Publicado' : 'Excluído'}</p>
+                  <p className="mt-1 whitespace-pre-line text-sm text-slate-600">{comment.comment_text}</p>
+                  {comment.moderation_note && <p className="mt-2 rounded bg-yellow-50 p-3 text-sm text-yellow-900"><strong>Orientação da moderação:</strong> {comment.moderation_note}</p>}
+                  {comment.status === 'needs_revision' && editingCommentId === comment.id && (
+                    <div className="mt-3">
+                      <textarea value={commentDraft} onChange={event => setCommentDraft(event.target.value)} rows="3" minLength="10" maxLength="2000" className="w-full rounded border border-slate-300 p-2" />
+                      <button type="button" onClick={() => resubmitComment(comment.id)} className="mt-2 rounded bg-orange-600 px-3 py-2 text-sm font-semibold text-white">Reenviar comentário</button>
+                    </div>
+                  )}
+                  {comment.status === 'needs_revision' && editingCommentId !== comment.id && (
+                    <button type="button" onClick={() => { setEditingCommentId(comment.id); setCommentDraft(comment.comment_text) }} className="mt-2 font-bold text-orange-700">Corrigir comentário</button>
+                  )}
+                </div>
+              ))}
             </article>
           ))}
         </div>
