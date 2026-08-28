@@ -147,13 +147,19 @@ export default function Feed() {
     try {
       const { data } = await axios.post(`/api/stories/${storyId}/reactions`, { emoji })
       // Confirma com a resposta do servidor (fonte da verdade)
-      setReactionMap((previous) => ({ ...previous, [storyId]: data }))
+      setReactionMap((previous) => ({
+        ...previous,
+        [storyId]: { ...data, views: previous[storyId]?.views || 0 },
+      }))
     } catch (error) {
       // Reverte a otimista em caso de erro: busca o estado real
       setReactionNotice(error.response?.data?.detail || 'Não foi possível registrar sua reação agora.')
       try {
         const { data } = await axios.get(`/api/stories/${storyId}/reactions`)
-        setReactionMap((previous) => ({ ...previous, [storyId]: data }))
+        setReactionMap((previous) => ({
+          ...previous,
+          [storyId]: { ...data, views: previous[storyId]?.views || 0 },
+        }))
       } catch (_ignored) {}
     } finally {
       setReactionBusyMap((previous) => ({ ...previous, [storyId]: false }))
