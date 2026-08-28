@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://casos-causos-e-outras-historias.onrender.com/sitemap.xml

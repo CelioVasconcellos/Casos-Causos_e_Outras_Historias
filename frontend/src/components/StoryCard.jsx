@@ -90,7 +90,7 @@ export default function StoryCard({ story, reactionData, reactionPending, onTogg
   }
 
   return (
-    <article ref={cardRef} className={`story-card story-card-${story.media_type || 'text'} mb-4`}>
+    <article id={`story-${story.id}`} ref={cardRef} className={`story-card story-card-${story.media_type || 'text'} mb-4`}>
       <div className="flex justify-between items-start mb-2">
         <h3 className="story-title text-xl font-bold">{story.title}</h3>
         <span className="story-category text-xs px-2 py-1 rounded">
