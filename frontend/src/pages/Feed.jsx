@@ -233,8 +233,8 @@ export default function Feed() {
           <h2 className="participation-title">Como participar do mural</h2>
           <p className="participation-copy">Leitura e reações são abertas a todos. Para enviar uma história nova, é preciso entrar com sua conta.</p>
           <ul className="participation-list">
-            <li>Reaja apenas por emojis para manter um ambiente respeitoso e acolhedor.</li>
-            <li>Comentários em texto não estão disponíveis nesta fase.</li>
+            <li>Reaja por emojis ou acrescente um comentário para compartilhar seu ponto de vista.</li>
+            <li>Para comentar, entre na sua conta. Todo comentário passa por moderação antes de ser publicado.</li>
             <li>Reações abusivas em sequência podem ser limitadas temporariamente.</li>
           </ul>
           <p className="participation-foot">Ao continuar, você concorda em usar o mural com respeito às memórias compartilhadas.</p>
