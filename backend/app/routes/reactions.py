@@ -10,6 +10,7 @@ from typing import Dict
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
+from jose import JWTError, jwt
 
 try:
     import redis
@@ -21,6 +22,7 @@ if redis is not None:
     REDIS_ERRORS = (redis.RedisError, OSError)
 
 from app.database import get_db
+from app.auth import ALGORITHM, SECRET_KEY
 from app.models import AdminUser, Reaction, ReactionBlock, Story, StoryStatus, StoryView
 from app.routes.admin import verify_admin
 from app.schemas import ReactionBlockCreate, ReactionSummaryResponse, ReactionToggleRequest
@@ -335,6 +337,22 @@ def register_story_views(
     approved_ids = [row[0] for row in db.query(Story.id).filter(
         Story.id.in_(story_ids), Story.status == StoryStatus.approved
     ).all()]
+    authorization = request.headers.get("authorization", "")
+    is_authenticated = False
+    if authorization.lower().startswith("bearer "):
+        try:
+            jwt.decode(authorization.split(" ", 1)[1].strip(), SECRET_KEY, algorithms=[ALGORITHM])
+            is_authenticated = True
+        except (JWTError, ValueError):
+            pass
+
+    if is_authenticated:
+        counts = db.query(StoryView.story_id, func.count(StoryView.id)).filter(
+            StoryView.story_id.in_(approved_ids)
+        ).group_by(StoryView.story_id).all()
+        count_by_story = {story_id: count for story_id, count in counts}
+        return {"items": [{"story_id": story_id, "views": count_by_story.get(story_id, 0)} for story_id in approved_ids]}
+
     existing_views = {
         row.story_id for row in db.query(StoryView.story_id).filter(
             StoryView.story_id.in_(approved_ids), StoryView.visitor_hash == visitor_hash

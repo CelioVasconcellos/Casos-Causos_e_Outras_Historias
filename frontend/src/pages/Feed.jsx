@@ -122,6 +122,10 @@ export default function Feed() {
     try {
       const { data } = await axios.post('/api/stories/views/bulk', null, {
         params: { story_ids: storyId },
+        headers: (() => {
+          const token = localStorage.getItem('token') || localStorage.getItem('admin_token')
+          return token ? { Authorization: `Bearer ${token}` } : undefined
+        })(),
       })
       const viewItem = data.items?.find((item) => item.story_id === storyId)
       if (viewItem) {
