@@ -16,6 +16,7 @@ function ProtectedRoute({ children, isAuth }) {
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'))
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(!!localStorage.getItem('admin_token'))
+  const [authNotice, setAuthNotice] = useState(() => sessionStorage.getItem('auth_notice') || '')
 
   useEffect(() => {
     const handleStorageChange = () => {
@@ -25,6 +26,10 @@ export default function App() {
     window.addEventListener('storage', handleStorageChange)
     return () => window.removeEventListener('storage', handleStorageChange)
   }, [])
+
+  useEffect(() => {
+    if (authNotice) sessionStorage.removeItem('auth_notice')
+  }, [authNotice])
 
   useEffect(() => {
     const registerPresence = async () => {
@@ -45,6 +50,12 @@ export default function App() {
 
   return (
     <Router>
+      {authNotice && (
+        <div role="alert" className="fixed inset-x-0 top-0 z-[60] bg-amber-100 px-4 py-3 text-center text-sm font-semibold text-amber-900 shadow-md">
+          {authNotice}
+          <button type="button" onClick={() => setAuthNotice('')} className="ml-3 font-bold underline">Fechar</button>
+        </div>
+      )}
       <nav className="site-nav sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center gap-6">
           <h1 className="site-brand text-xl font-bold">
