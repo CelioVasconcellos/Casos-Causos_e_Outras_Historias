@@ -8,6 +8,7 @@ import time
 from typing import Dict
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 try:
@@ -20,7 +21,7 @@ if redis is not None:
     REDIS_ERRORS = (redis.RedisError, OSError)
 
 from app.database import get_db
-from app.models import AdminUser, Reaction, ReactionBlock, Story, StoryStatus
+from app.models import AdminUser, Reaction, ReactionBlock, Story, StoryStatus, StoryView
 from app.routes.admin import verify_admin
 from app.schemas import ReactionBlockCreate, ReactionSummaryResponse, ReactionToggleRequest
 
@@ -234,7 +235,7 @@ def _assert_not_blocked(fingerprint_hash: str, ip_hash: str, db: Session):
 
 
 def _build_summary(story_id: int, fingerprint_hash: str, db: Session) -> ReactionSummaryResponse:
-    totals: dict[str, int] = {}
+    totals: dict[str, int] = {emoji: 0 for emoji in ALLOWED_EMOJIS}
     rows = db.query(Reaction.emoji).filter(Reaction.story_id == story_id).all()
     for row in rows:
         totals[row[0]] = totals.get(row[0], 0) + 1
@@ -281,7 +282,10 @@ def get_bulk_story_reactions(
         .all()
     )
 
-    totals_by_story: dict[int, dict[str, int]] = {story_id: {} for story_id in approved_ids}
+    totals_by_story: dict[int, dict[str, int]] = {
+        story_id: {emoji: 0 for emoji in ALLOWED_EMOJIS}
+        for story_id in approved_ids
+    }
     mine_by_story: dict[int, set[str]] = {story_id: set() for story_id in approved_ids}
 
     for story_id, emoji, row_fingerprint in reaction_rows:
@@ -303,6 +307,49 @@ def get_bulk_story_reactions(
         )
 
     return {"items": items}
+
+
+@router.post("/api/stories/views/bulk")
+def register_story_views(
+    request: Request,
+    response: Response,
+    story_ids: list[int] = Query(default=[]),
+    db: Session = Depends(get_db),
+):
+    if not story_ids:
+        return {"items": []}
+
+    visitor_id = request.cookies.get("ccoh_visitor")
+    if not visitor_id or len(visitor_id) > 80:
+        visitor_id = token_urlsafe(24)
+        response.set_cookie(
+            key="ccoh_visitor",
+            value=visitor_id,
+            max_age=60 * 60 * 24 * 365,
+            httponly=True,
+            samesite="lax",
+            secure=COOKIE_SECURE,
+        )
+    visitor_hash = _hash_value(visitor_id)
+
+    approved_ids = [row[0] for row in db.query(Story.id).filter(
+        Story.id.in_(story_ids), Story.status == StoryStatus.approved
+    ).all()]
+    existing_views = {
+        row.story_id for row in db.query(StoryView.story_id).filter(
+            StoryView.story_id.in_(approved_ids), StoryView.visitor_hash == visitor_hash
+        ).all()
+    }
+    for story_id in approved_ids:
+        if story_id not in existing_views:
+            db.add(StoryView(story_id=story_id, visitor_hash=visitor_hash))
+    db.commit()
+
+    counts = db.query(StoryView.story_id, func.count(StoryView.id)).filter(
+        StoryView.story_id.in_(approved_ids)
+    ).group_by(StoryView.story_id).all()
+    count_by_story = {story_id: count for story_id, count in counts}
+    return {"items": [{"story_id": story_id, "views": count_by_story.get(story_id, 0)} for story_id in approved_ids]}
 
 
 @router.get("/api/stories/{story_id}/reactions", response_model=ReactionSummaryResponse)
@@ -345,10 +392,7 @@ def toggle_story_reaction(
     )
 
     reacted = True
-    if existing:
-        db.delete(existing)
-        reacted = False
-    else:
+    if not existing:
         db.add(
             Reaction(
                 story_id=story_id,

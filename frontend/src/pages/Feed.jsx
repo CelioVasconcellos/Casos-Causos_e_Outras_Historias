@@ -35,6 +35,17 @@ const demoStories = [
   },
 ]
 
+const EMOJI_ORDER = ['❤️', '🙏', '👏', '😮', '😢', '🌟']
+
+function createEmptyReactionSummary(storyId) {
+  return {
+    story_id: storyId,
+    totals: Object.fromEntries(EMOJI_ORDER.map((emoji) => [emoji, 0])),
+    my_reactions: [],
+    total_count: 0,
+  }
+}
+
 export default function Feed() {
   const [stories, setStories] = useState([])
   const [reactionMap, setReactionMap] = useState({})
@@ -79,12 +90,29 @@ export default function Feed() {
     }
 
     try {
-      const { data } = await axios.get('/api/stories/reactions/bulk', {
-        params: { story_ids: realStories.map((story) => story.id) },
-      })
+      const [{ data: viewsData }, { data }] = await Promise.all([
+        axios.post('/api/stories/views/bulk', null, {
+          params: { story_ids: realStories.map((story) => story.id) },
+        }),
+        axios.get('/api/stories/reactions/bulk', {
+          params: { story_ids: realStories.map((story) => story.id) },
+        }),
+      ])
+      const viewsByStory = Object.fromEntries((viewsData.items || []).map((item) => [item.story_id, item.views]))
       const nextMap = {}
+      for (const story of realStories) {
+        nextMap[story.id] = createEmptyReactionSummary(story.id)
+      }
       for (const item of data.items || []) {
-        nextMap[item.story_id] = item
+        nextMap[item.story_id] = {
+          ...createEmptyReactionSummary(item.story_id),
+          ...item,
+          totals: {
+            ...createEmptyReactionSummary(item.story_id).totals,
+            ...(item.totals || {}),
+          },
+          views: viewsByStory[item.story_id] || 0,
+        }
       }
       setReactionMap(nextMap)
     } catch (_ignored) {
@@ -100,13 +128,11 @@ export default function Feed() {
 
     // Atualizacao otimista: aplica a mudanca imediatamente na UI
     setReactionMap((previous) => {
-      const current = previous[storyId] || { totals: {}, my_reactions: [] }
+      const current = previous[storyId] || createEmptyReactionSummary(storyId)
       const alreadyMine = current.my_reactions.includes(emoji)
       const newTotals = { ...current.totals }
-      newTotals[emoji] = Math.max(0, (newTotals[emoji] || 0) + (alreadyMine ? -1 : 1))
-      const newMine = alreadyMine
-        ? current.my_reactions.filter((e) => e !== emoji)
-        : [...current.my_reactions, emoji]
+      newTotals[emoji] = (newTotals[emoji] || 0) + (alreadyMine ? 0 : 1)
+      const newMine = alreadyMine ? current.my_reactions : [...current.my_reactions, emoji]
       return {
         ...previous,
         [storyId]: {

@@ -62,6 +62,9 @@ export default function StoryCard({ story, reactionData, reactionPending, onTogg
       {typeof story.id === 'number' && (
         <div className="reaction-wrap mt-5">
           <p className="reaction-title">Reagir sem login</p>
+          <p className="mb-3 text-sm text-slate-600">
+            {reactionData?.views || 0} visualizações · {reactionData?.total_count || 0} interações
+          </p>
           <div className="reaction-grid">
             {EMOJI_ORDER.map((emoji) => {
               const isActive = myReactions.has(emoji)

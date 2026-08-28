@@ -69,6 +69,18 @@ class Reaction(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
 
+class StoryView(Base):
+    __tablename__ = "story_views"
+    __table_args__ = (
+        UniqueConstraint("story_id", "visitor_hash", name="uq_story_views_story_visitor"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    story_id = Column(Integer, ForeignKey("stories.id", ondelete="CASCADE"), nullable=False, index=True)
+    visitor_hash = Column(String(64), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
 class ReactionBlock(Base):
     __tablename__ = "reaction_blocks"
 
