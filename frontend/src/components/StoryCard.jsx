@@ -55,7 +55,8 @@ export default function StoryCard({ story, reactionData, reactionPending, onTogg
       return
     }
     if (commentText.trim().length < 10) {
-      setCommentMessage('Escreva pelo menos 10 caracteres.')
+      window.alert('Seu comentário precisa ter pelo menos 10 caracteres.')
+      setCommentMessage('Escreva pelo menos 10 caracteres para enviar o comentário.')
       return
     }
     setCommentLoading(true)
