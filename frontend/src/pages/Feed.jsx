@@ -93,9 +93,11 @@ export default function Feed() {
       const [{ data: viewsData }, { data }] = await Promise.all([
         axios.post('/api/stories/views/bulk', null, {
           params: { story_ids: realStories.map((story) => story.id) },
+          paramsSerializer: { indexes: null },
         }),
         axios.get('/api/stories/reactions/bulk', {
           params: { story_ids: realStories.map((story) => story.id) },
+          paramsSerializer: { indexes: null },
         }),
       ])
       const viewsByStory = Object.fromEntries((viewsData.items || []).map((item) => [item.story_id, item.views]))
