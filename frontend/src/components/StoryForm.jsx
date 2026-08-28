@@ -88,6 +88,12 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
     setRecording(false)
   }
 
+  const removeMedia = () => {
+    setMediaFile(null)
+    setAudioPreviewUrl('')
+    setRecordingError('')
+  }
+
   const formatRecordingTime = (seconds) => {
     const minutes = Math.floor(seconds / 60).toString().padStart(2, '0')
     const remainingSeconds = (seconds % 60).toString().padStart(2, '0')
@@ -239,6 +245,9 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
           <div className="mt-3">
             <p className="mb-1 text-xs font-semibold text-blue-900">Prévia do áudio</p>
             <audio src={audioPreviewUrl} controls className="w-full" />
+            <button type="button" onClick={removeMedia} disabled={loading} className="mt-2 rounded-lg border border-red-300 px-3 py-1.5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">
+              Excluir áudio
+            </button>
           </div>
         )}
         {recordingError && <p className="mt-3 text-sm font-semibold text-red-700">{recordingError}</p>}
