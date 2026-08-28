@@ -83,7 +83,7 @@ def list_comments(
     else:
         query = query.filter(Comment.deleted_at.is_(None))
         if status_filter in {"pending", "needs_revision", "approved"}:
-            query = query.filter(Comment.status == status_filter)
+            query = query.filter(Comment.status == CommentStatus(status_filter))
     return query.order_by(Comment.created_at.desc()).limit(100).all()
 
 

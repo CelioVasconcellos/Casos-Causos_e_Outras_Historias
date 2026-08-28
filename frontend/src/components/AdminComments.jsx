@@ -12,9 +12,11 @@ export default function AdminComments() {
   const [comments, setComments] = useState([])
   const [filter, setFilter] = useState('pending')
   const [loading, setLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
 
   const fetchComments = async () => {
     setLoading(true)
+    setErrorMessage('')
     try {
       const token = localStorage.getItem('admin_token')
       const { data } = await axios.get('/api/admin/comments', {
@@ -24,6 +26,8 @@ export default function AdminComments() {
       setComments(data)
     } catch (error) {
       console.error('Erro ao buscar comentários')
+      setComments([])
+      setErrorMessage(error.response?.data?.detail || `Não foi possível carregar os comentários (${error.response?.status || 'erro de conexão'}).`)
     } finally {
       setLoading(false)
     }
@@ -79,6 +83,7 @@ export default function AdminComments() {
           </button>
         ))}
       </div>
+      {errorMessage && <p className="mb-4 rounded bg-red-50 p-3 text-sm text-red-700">{errorMessage}</p>}
       {loading ? <p>Carregando...</p> : (
         <div className="space-y-4">
           {comments.map((comment) => (
