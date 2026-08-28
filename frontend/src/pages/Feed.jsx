@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+﻿import { useState, useEffect, useCallback, useRef } from 'react'
 import axios from 'axios'
 import StoryCard from '../components/StoryCard'
 
@@ -59,6 +59,7 @@ export default function Feed() {
   const [dateTo, setDateTo] = useState('')
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(false)
+  const viewedStoriesRef = useRef(new Set())
 
   useEffect(() => {
     fetchStories()
@@ -115,7 +116,9 @@ export default function Feed() {
     }
   }
 
-  const registerStoryView = async (storyId) => {
+  const registerStoryView = useCallback(async (storyId) => {
+    if (viewedStoriesRef.current.has(storyId)) return
+    viewedStoriesRef.current.add(storyId)
     try {
       const { data } = await axios.post('/api/stories/views/bulk', null, {
         params: { story_ids: storyId },
@@ -133,7 +136,7 @@ export default function Feed() {
     } catch (_ignored) {
       // A falha no contador não impede a leitura ou a reação.
     }
-  }
+  }, [])
 
   const toggleReaction = async (storyId, emoji) => {
     if (reactionBusyMap[storyId]) return
