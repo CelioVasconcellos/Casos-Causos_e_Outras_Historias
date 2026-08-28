@@ -102,6 +102,24 @@ def validate_video(file_content: bytes, filename: str) -> tuple:
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Erro ao salvar vídeo: {str(e)}")
 
+def validate_audio(file_content: bytes, filename: str, content_type: str = "audio/octet-stream") -> tuple:
+    if len(file_content) > MAX_UPLOAD_SIZE * 10:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Áudio muito grande")
+    try:
+        extension = Path(filename).suffix.lower() or ".audio"
+        filename_clean = f"aud_{os.urandom(8).hex()}_{Path(filename).stem}{extension}"
+
+        if USE_S3:
+            url = _upload_to_s3(file_content, filename_clean, content_type)
+            return url, "audio"
+
+        filepath = _save_locally(file_content, filename_clean)
+        return filepath, "audio"
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Erro ao salvar áudio: {str(e)}")
+
 def delete_file(filepath_or_url: str):
     """Remove arquivo do disco local ou do bucket S3/R2, conforme o formato do caminho."""
     try:

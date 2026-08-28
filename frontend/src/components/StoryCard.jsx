@@ -37,6 +37,10 @@ export default function StoryCard({ story, reactionData, reactionPending, onTogg
       {story.media_url && story.media_type === 'video' && (
         <video src={mediaSrc} controls preload="metadata" className="w-full rounded-lg mb-3 max-h-96" />
       )}
+
+      {story.media_url && story.media_type === 'audio' && (
+        <audio src={mediaSrc} controls preload="metadata" className="w-full mb-3" />
+      )}
       
       <p className="story-copy leading-relaxed whitespace-pre-line">
         {expanded || story.story_text.length <= 300

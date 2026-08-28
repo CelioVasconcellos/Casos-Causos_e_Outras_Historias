@@ -38,6 +38,10 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (!mediaFile && formData.story_text.trim().length < 10) {
+      setMessage('Escreva pelo menos 10 caracteres ou anexe um áudio.')
+      return
+    }
     setLoading(true)
     setMessage('')
     setUploadProgress(0)
@@ -115,10 +119,9 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
       <input
         type="text"
         name="title"
-        placeholder="Título da história"
+        placeholder="Título da história (opcional para áudio)"
         value={formData.title}
         onChange={handleChange}
-        required
         className="w-full px-4 py-2 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
       
@@ -138,23 +141,22 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
       
       <textarea
         name="story_text"
-        placeholder="Conte sua história..."
+        placeholder="Conte sua história ou envie somente um áudio..."
         value={formData.story_text}
         onChange={handleChange}
-        required
         rows="8"
         className="w-full px-4 py-2 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
 
       <label className="block mb-4">
-        <span className="block mb-2 text-sm font-semibold text-gray-700">Foto ou vídeo (opcional)</span>
+        <span className="block mb-2 text-sm font-semibold text-gray-700">Foto, vídeo ou áudio (opcional)</span>
         <input
           type="file"
-          accept="image/*,video/mp4,video/webm,video/quicktime"
+          accept="image/*,video/mp4,video/webm,video/quicktime,audio/mpeg,audio/mp3,audio/mp4,audio/m4a,audio/wav,audio/ogg,audio/webm,audio/aac"
           onChange={(e) => setMediaFile(e.target.files[0] || null)}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
         />
-        <span className="block mt-1 text-xs text-gray-500">Imagens até 5 MB; vídeos até 50 MB.</span>
+        <span className="block mt-1 text-xs text-gray-500">Imagens até 5 MB; vídeos e áudios até 50 MB. Você pode enviar só um áudio.</span>
       </label>
       
       {loading && (

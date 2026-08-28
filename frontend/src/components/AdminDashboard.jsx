@@ -89,6 +89,23 @@ export default function AdminDashboard() {
     }
   }
 
+  const updateMetadata = async (event, id) => {
+    event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+    try {
+      const token = localStorage.getItem('admin_token')
+      await axios.put(`/api/admin/stories/${id}`, {
+        title: formData.get('title'),
+        category: formData.get('category'),
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      fetchStories()
+    } catch (error) {
+      console.error('Erro ao salvar título e classificação')
+    }
+  }
+
   const deleteStory = async (id, title) => {
     const message = filter === 'approved'
       ? `ATENÇÃO: "${title}" está PUBLICADA no mural.\n\nEla será removida do mural e guardada em Excluídas (recuperável). Continuar?`
@@ -195,7 +212,33 @@ export default function AdminDashboard() {
         <div className="space-y-4">
           {stories.map(story => (
             <div key={story.id} className="bg-white p-4 rounded-lg shadow-md">
-              <h3 className="font-bold text-lg">{story.title}</h3>
+              <form onSubmit={(event) => updateMetadata(event, story.id)} className="mb-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_14rem_auto] sm:items-end">
+                <label className="text-sm font-semibold text-gray-700">
+                  Título
+                  <input
+                    name="title"
+                    defaultValue={story.title}
+                    minLength="5"
+                    maxLength="150"
+                    required
+                    className="mt-1 w-full rounded border border-gray-300 px-3 py-2 font-normal"
+                  />
+                </label>
+                <label className="text-sm font-semibold text-gray-700">
+                  Classificação
+                  <select name="category" defaultValue={story.category || 'Geral'} className="mt-1 w-full rounded border border-gray-300 px-3 py-2 font-normal">
+                    <option>Geral</option>
+                    <option>Espirituais</option>
+                    <option>Festas & Celebrações</option>
+                    <option>Aprendizados</option>
+                    <option>Relacionamentos</option>
+                    <option>Vida & Viagens</option>
+                  </select>
+                </label>
+                <button type="submit" className="rounded bg-blue-600 px-3 py-2 font-semibold text-white hover:bg-blue-700">
+                  Salvar dados
+                </button>
+              </form>
               <p className="text-sm text-gray-600 mb-3">{story.author_name} • {story.category}</p>
 
               {story.media_url && story.media_type === 'image' && (
@@ -212,6 +255,9 @@ export default function AdminDashboard() {
                   preload="metadata"
                   className="mb-4 max-h-96 w-full rounded-lg"
                 />
+              )}
+              {story.media_url && story.media_type === 'audio' && (
+                <audio src={resolveMediaUrl(story.media_url)} controls preload="metadata" className="mb-4 w-full" />
               )}
 
               <AdminStoryText text={story.story_text} />

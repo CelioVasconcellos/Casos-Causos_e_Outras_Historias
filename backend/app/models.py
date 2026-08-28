@@ -14,6 +14,7 @@ class MediaType(str, enum.Enum):
     none = "none"
     image = "image"
     video = "video"
+    audio = "audio"
 
 
 class Story(Base):
