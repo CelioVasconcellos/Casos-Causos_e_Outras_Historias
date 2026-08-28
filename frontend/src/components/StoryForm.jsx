@@ -154,8 +154,15 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
     } catch (error) {
       if (error.code === 'ECONNABORTED') {
         setMessage('O envio demorou demais e foi cancelado. Verifique sua internet, reduza o tamanho do arquivo e tente novamente.')
+      } else if (error.response?.status === 401) {
+        setMessage('Sua sessão expirou. Entre novamente para enviar a história.')
+      } else if (error.response?.data?.detail) {
+        const detail = Array.isArray(error.response.data.detail)
+          ? error.response.data.detail.map(item => item.msg).join(' ')
+          : error.response.data.detail
+        setMessage(`Não foi possível enviar: ${detail}`)
       } else {
-        setMessage('Erro ao enviar. Tente novamente.')
+        setMessage('Não foi possível enviar agora. Verifique sua conexão e tente novamente.')
       }
       setUploadProgress(0)
       setIsProcessing(false)
