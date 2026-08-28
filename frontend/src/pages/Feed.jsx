@@ -190,14 +190,18 @@ export default function Feed() {
         <div className="filter-panel mb-8">
           <div className="filter-heading">
             <div>
-              <p className="filter-kicker">Encontre um causo</p>
-              <h2 className="filter-title">Procure pela lembrança que ficou</h2>
+              <p className="filter-kicker">Busca e filtros</p>
+              <h2 className="filter-title">Encontre uma história específica</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-600">
+                Aqui você pode buscar uma história pelo título, pelo nome do autor ou pelo conteúdo. Também pode filtrar por categoria e por data de publicação.
+              </p>
             </div>
-            <span className="filter-hint">Combine os filtros</span>
+            <span className="filter-hint">Escolha uma ou mais opções</span>
           </div>
+          <p className="mb-2 text-sm font-semibold text-slate-700">Busca geral</p>
           <input
             type="text"
-            placeholder="Buscar em todas as histórias..."
+            placeholder="Digite uma palavra, título ou nome de autor..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="filter-input filter-search mb-4"
