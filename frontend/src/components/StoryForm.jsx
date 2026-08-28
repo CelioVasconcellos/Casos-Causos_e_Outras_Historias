@@ -14,11 +14,24 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [mediaFile, setMediaFile] = useState(null)
+  const [audioPreviewUrl, setAudioPreviewUrl] = useState('')
+  const [recording, setRecording] = useState(false)
+  const [recordingSeconds, setRecordingSeconds] = useState(0)
+  const [recordingError, setRecordingError] = useState('')
   const [uploadProgress, setUploadProgress] = useState(0)
   const [isProcessing, setIsProcessing] = useState(false)
   const [slowConnection, setSlowConnection] = useState(false)
   const lastProgressRef = useRef({ percent: 0, time: 0 })
   const stallTimerRef = useRef(null)
+  const mediaRecorderRef = useRef(null)
+  const recordingChunksRef = useRef([])
+  const recordingTimerRef = useRef(null)
+
+  useEffect(() => () => {
+    if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop()
+    if (recordingTimerRef.current) window.clearInterval(recordingTimerRef.current)
+    if (audioPreviewUrl) URL.revokeObjectURL(audioPreviewUrl)
+  }, [audioPreviewUrl])
 
   useEffect(() => {
     if (storyToEdit) {
@@ -34,6 +47,51 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
+  }
+
+  const startRecording = async () => {
+    setRecordingError('')
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      setRecordingError('Seu navegador não permite gravação de áudio. Escolha um arquivo de áudio para enviar.')
+      return
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const recorder = new MediaRecorder(stream)
+      recordingChunksRef.current = []
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) recordingChunksRef.current.push(event.data)
+      }
+      recorder.onstop = () => {
+        const audioBlob = new Blob(recordingChunksRef.current, { type: recorder.mimeType || 'audio/webm' })
+        const extension = audioBlob.type.includes('mp4') ? 'm4a' : 'webm'
+        const recordedFile = new File([audioBlob], `relato-gravado.${extension}`, { type: audioBlob.type })
+        setMediaFile(recordedFile)
+        setAudioPreviewUrl(URL.createObjectURL(recordedFile))
+        stream.getTracks().forEach(track => track.stop())
+      }
+      recorder.start()
+      mediaRecorderRef.current = recorder
+      setRecordingSeconds(0)
+      setRecording(true)
+      recordingTimerRef.current = window.setInterval(() => setRecordingSeconds(seconds => seconds + 1), 1000)
+    } catch (error) {
+      setRecordingError('Não foi possível acessar o microfone. Autorize o uso do microfone e tente novamente.')
+    }
+  }
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop()
+    if (recordingTimerRef.current) window.clearInterval(recordingTimerRef.current)
+    recordingTimerRef.current = null
+    setRecording(false)
+  }
+
+  const formatRecordingTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60).toString().padStart(2, '0')
+    const remainingSeconds = (seconds % 60).toString().padStart(2, '0')
+    return `${minutes}:${remainingSeconds}`
   }
 
   const handleSubmit = async (e) => {
@@ -80,6 +138,9 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
       setMessage('Obrigado! Seu relato foi enviado para curadoria.')
       setFormData({ title: '', author_name: localStorage.getItem('username') || '', category: 'Geral', story_text: '' })
       setMediaFile(null)
+      setAudioPreviewUrl('')
+      setRecordingSeconds(0)
+      setRecordingError('')
       setUploadProgress(0)
       setIsProcessing(false)
       e.target.reset()
@@ -158,6 +219,30 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
         />
         <span className="block mt-1 text-xs text-gray-500">Imagens até 5 MB; vídeos e áudios até 50 MB. Você pode enviar só um áudio.</span>
       </label>
+
+      <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
+        <p className="mb-2 text-sm font-semibold text-blue-900">Ou grave sua história agora</p>
+        <p className="mb-3 text-xs text-blue-800">Toque em gravar, conte sua história e pare quando terminar. Depois, o áudio será enviado pelo botão abaixo.</p>
+        <div className="flex flex-wrap items-center gap-3">
+          {!recording ? (
+            <button type="button" onClick={startRecording} disabled={loading} className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700 disabled:bg-gray-400">
+              Gravar áudio
+            </button>
+          ) : (
+            <button type="button" onClick={stopRecording} className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700">
+              Parar gravação
+            </button>
+          )}
+          {recording && <span className="font-mono text-sm font-semibold text-red-700">Gravando {formatRecordingTime(recordingSeconds)}</span>}
+        </div>
+        {mediaFile && !recording && mediaFile.type.startsWith('audio/') && (
+          <div className="mt-3">
+            <p className="mb-1 text-xs font-semibold text-blue-900">Prévia do áudio</p>
+            <audio src={audioPreviewUrl} controls className="w-full" />
+          </div>
+        )}
+        {recordingError && <p className="mt-3 text-sm font-semibold text-red-700">{recordingError}</p>}
+      </div>
       
       {loading && (
         <div className="mb-4">
