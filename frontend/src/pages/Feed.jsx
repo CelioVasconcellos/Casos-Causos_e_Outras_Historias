@@ -288,7 +288,7 @@ export default function Feed() {
             <span className="story-feed-line" />
           </div>
           {loading ? (
-            <p className="text-center text-gray-600">Carregando histórias...</p>
+            <p className="text-center text-white">Carregando histórias...</p>
           ) : stories.length > 0 ? (
             <div>
               {stories.map(story => (
@@ -303,9 +303,9 @@ export default function Feed() {
               ))}
             </div>
           ) : category ? (
-            <p className="text-center text-gray-600">Ainda não há histórias na categoria "{category}" até o momento. Seja a primeira pessoa a compartilhar uma!</p>
+            <p className="text-center text-white">Ainda não há histórias na categoria "{category}" até o momento. Seja a primeira pessoa a compartilhar uma!</p>
           ) : (
-            <p className="text-center text-gray-600">Nenhuma história encontrada.</p>
+            <p className="text-center text-white">Nenhuma história encontrada.</p>
           )}
         </section>
       </div>
