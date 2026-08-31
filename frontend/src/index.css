@@ -365,6 +365,15 @@ body {
 
 .story-copy {
   color: #324f58;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.story-copy-notice {
+  margin: 0.35rem 0 0;
+  color: #8a9a99;
+  font-size: 0.72rem;
+  font-style: italic;
 }
 
 .story-card img,

@@ -14,6 +14,9 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [mediaFile, setMediaFile] = useState(null)
+  const [customCategory, setCustomCategory] = useState('')
+  const [consentPublish, setConsentPublish] = useState(false)
+  const [consentEbook, setConsentEbook] = useState(false)
   const [audioPreviewUrl, setAudioPreviewUrl] = useState('')
   const [recording, setRecording] = useState(false)
   const [recordingSeconds, setRecordingSeconds] = useState(0)
@@ -41,6 +44,8 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
         category: storyToEdit.category,
         story_text: storyToEdit.story_text,
       })
+      setConsentPublish(!!storyToEdit.consent_publish)
+      setConsentEbook(!!storyToEdit.consent_ebook)
     }
   }, [storyToEdit])
 
@@ -106,6 +111,14 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
       setMessage('Escreva pelo menos 10 caracteres ou anexe um áudio.')
       return
     }
+    if (formData.category === '__outra__' && customCategory.trim().length < 2) {
+      setMessage('Escreva o nome da categoria que você está sugerindo.')
+      return
+    }
+    if (!consentPublish) {
+      setMessage('É necessário autorizar a publicação da história no mural para enviar.')
+      return
+    }
     setLoading(true)
     setMessage('')
     setUploadProgress(0)
@@ -122,7 +135,15 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('admin_token')
       const payload = new FormData()
-      Object.entries(formData).forEach(([key, value]) => payload.append(key, value))
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key === 'category' && value === '__outra__') {
+          payload.append('category', customCategory.trim())
+        } else {
+          payload.append(key, value)
+        }
+      })
+      payload.append('consent_publish', consentPublish ? 'true' : 'false')
+      payload.append('consent_ebook', consentEbook ? 'true' : 'false')
       if (mediaFile) payload.append('media', mediaFile)
 
       const endpoint = storyToEdit ? `/api/stories/${storyToEdit.id}` : '/api/stories'
@@ -143,6 +164,9 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
       })
       setMessage('Obrigado! Seu relato foi enviado para curadoria.')
       setFormData({ title: '', author_name: localStorage.getItem('username') || '', category: 'Geral', story_text: '' })
+      setCustomCategory('')
+      setConsentPublish(false)
+      setConsentEbook(false)
       setMediaFile(null)
       setAudioPreviewUrl('')
       setRecordingSeconds(0)
@@ -176,6 +200,9 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md">
       <h2 className="text-2xl font-bold mb-6">Compartilhe Sua História</h2>
+      <p className="-mt-4 mb-6 text-sm text-gray-600">
+        Este mural é eclético e não pertence a nenhuma categoria específica: escolha a que mais combina com sua história ou sugira uma nova abaixo.
+      </p>
       
       <input
         type="text"
@@ -211,7 +238,18 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
         <option>Aprendizados</option>
         <option>Relacionamentos</option>
         <option>Vida & Viagens</option>
+        <option value="__outra__">Outra (sugerir nova categoria)</option>
       </select>
+
+      {formData.category === '__outra__' && (
+        <input
+          type="text"
+          placeholder="Digite o nome da categoria que você sugere"
+          value={customCategory}
+          onChange={(e) => setCustomCategory(e.target.value)}
+          className="w-full px-4 py-2 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      )}
       
       <textarea
         name="story_text"
@@ -294,6 +332,28 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
           )}
         </div>
       )}
+
+      <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+        <label className="flex items-start gap-2 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            checked={consentPublish}
+            onChange={(e) => setConsentPublish(e.target.checked)}
+            required
+            className="mt-1"
+          />
+          <span>Autorizo a publicação desta história no mural, após aprovação da curadoria. (obrigatório)</span>
+        </label>
+        <label className="mt-3 flex items-start gap-2 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            checked={consentEbook}
+            onChange={(e) => setConsentEbook(e.target.checked)}
+            className="mt-1"
+          />
+          <span>Autorizo também o uso desta história em uma futura publicação de e-book com as melhores histórias do mural. (opcional)</span>
+        </label>
+      </div>
       
       <button
         type="submit"

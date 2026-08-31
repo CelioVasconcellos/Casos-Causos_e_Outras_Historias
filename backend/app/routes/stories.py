@@ -11,6 +11,17 @@ from typing import List
 
 router = APIRouter(prefix="/api/stories", tags=["stories"])
 
+# Categorias sempre visíveis na home, mesmo sem histórias publicadas ainda.
+DEFAULT_CATEGORIES = [
+    "Geral",
+    "Espirituais",
+    "Festas & Celebrações",
+    "Aprendizados",
+    "Relacionamentos",
+    "Vida & Viagens",
+]
+
+
 def save_media(media, content: bytes):
     """Salva mídia e retorna a URL pública (local /uploads/... ou remota S3/R2)."""
     if media.content_type and media.content_type.startswith("image/"):
@@ -81,6 +92,8 @@ async def create_story(
     author_name: str = Form(""),
     category: str = Form("Geral"),
     story_text: str = Form(""),
+    consent_publish: bool = Form(False),
+    consent_ebook: bool = Form(False),
     media: UploadFile | None = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -91,6 +104,8 @@ async def create_story(
         raise HTTPException(status_code=422, detail="O nome deve ter entre 2 e 100 caracteres")
     if len(story_text.strip()) < 10 and not media:
         raise HTTPException(status_code=422, detail="A história deve ter pelo menos 10 caracteres")
+    if not consent_publish:
+        raise HTTPException(status_code=422, detail="É necessário autorizar a publicação da história no mural")
 
     media_url = None
     media_type = MediaType.none
@@ -107,6 +122,8 @@ async def create_story(
         media_url=media_url,
         media_type=media_type,
         status=StoryStatus.pending,
+        consent_publish=consent_publish,
+        consent_ebook=consent_ebook,
     )
     db.add(db_story)
     db.commit()
@@ -120,6 +137,8 @@ async def resubmit_story(
     author_name: str = Form(""),
     category: str = Form("Geral"),
     story_text: str = Form(""),
+    consent_publish: bool = Form(False),
+    consent_ebook: bool = Form(False),
     media: UploadFile | None = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -133,12 +152,16 @@ async def resubmit_story(
         raise HTTPException(status_code=422, detail="O nome deve ter entre 2 e 100 caracteres")
     if len(story_text.strip()) < 10 and not (media and media.filename):
         raise HTTPException(status_code=422, detail="A história deve ter pelo menos 10 caracteres")
+    if not consent_publish:
+        raise HTTPException(status_code=422, detail="É necessário autorizar a publicação da história no mural")
     story.title = title.strip()
     story.author_name = author_name.strip()
     story.category = category.strip() or "Geral"
     story.story_text = story_text.strip()
     story.status = StoryStatus.pending
     story.moderation_note = None
+    story.consent_publish = consent_publish
+    story.consent_ebook = consent_ebook
     if media and media.filename:
         content = await media.read()
         if story.media_url:
@@ -153,5 +176,9 @@ async def resubmit_story(
 
 @router.get("/categories/all", response_model=List[str])
 def get_categories(db: Session = Depends(get_db)):
-    categories = db.query(Story.category).filter(Story.status == StoryStatus.approved).distinct().all()
-    return [cat[0] for cat in categories if cat[0]]
+    used_categories = db.query(Story.category).filter(Story.status == StoryStatus.approved).distinct().all()
+    all_categories = list(DEFAULT_CATEGORIES)
+    for (cat,) in used_categories:
+        if cat and cat not in all_categories:
+            all_categories.append(cat)
+    return all_categories

@@ -226,13 +226,16 @@ export default function Feed() {
           <span className="feed-spark">um lugar para lembrar</span>
           <h1 className="feed-title text-4xl font-bold mb-2 text-center">Casos, Causos e Outras Histórias</h1>
           <p className="text-center mb-2">Memórias, aprendizados e testemunhos que fortalecem o cuidado coletivo.</p>
-          <p className="text-center mb-8">Nosso objetivo é preservar histórias para inspirar as próximas gerações.</p>
+          <p className="text-center mb-2">Nosso objetivo é preservar histórias para inspirar as próximas gerações.</p>
+          <p className="text-center mb-8">Este mural é eclético: não é destinado a nenhuma categoria específica. Escolha a categoria que combina com sua história ou sugira uma nova.</p>
         </div>
 
         <section className="participation-panel mb-8">
           <h2 className="participation-title">Como participar do mural</h2>
-          <p className="participation-copy">Leitura e reações são abertas a todos. Para enviar uma história nova, é preciso entrar com sua conta.</p>
+          <p className="participation-copy">Este é um mural eclético: não pertence a nenhuma categoria ou grupo específico. Qualquer pessoa pode compartilhar sua história, do jeito e sobre o assunto que quiser.</p>
+          <p className="participation-copy mt-2">Leitura e reações são abertas a todos. Para enviar uma história nova, é preciso entrar com sua conta.</p>
           <ul className="participation-list">
+            <li>Escolha uma das categorias existentes ou sugira uma nova ao enviar sua história — o mural está sempre aberto a crescer.</li>
             <li>Reaja por emojis ou acrescente um comentário para compartilhar seu ponto de vista.</li>
             <li>Para comentar, entre na sua conta. Todo comentário passa por moderação antes de ser publicado.</li>
             <li>Reações abusivas em sequência podem ser limitadas temporariamente.</li>
@@ -299,6 +302,8 @@ export default function Feed() {
                 />
               ))}
             </div>
+          ) : category ? (
+            <p className="text-center text-gray-600">Ainda não há histórias na categoria "{category}" até o momento. Seja a primeira pessoa a compartilhar uma!</p>
           ) : (
             <p className="text-center text-gray-600">Nenhuma história encontrada.</p>
           )}

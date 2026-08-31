@@ -114,12 +114,18 @@ export default function StoryCard({ story, reactionData, reactionPending, onTogg
         <audio src={mediaSrc} controls preload="metadata" className="w-full mb-3" />
       )}
       
-      <p className="story-copy leading-relaxed whitespace-pre-line">
+      <p
+        className="story-copy leading-relaxed whitespace-pre-line select-none"
+        onCopy={(event) => event.preventDefault()}
+        onCut={(event) => event.preventDefault()}
+        onContextMenu={(event) => event.preventDefault()}
+      >
         {expanded || story.story_text.length <= 300
           ? story.story_text
           : story.story_text.substring(0, 300) + '...'
         }
       </p>
+      <p className="story-copy-notice">Este relato é protegido; a cópia do texto não está disponível.</p>
       
       {story.story_text.length > 300 && (
         <button

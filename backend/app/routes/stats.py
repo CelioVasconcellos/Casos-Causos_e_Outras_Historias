@@ -203,25 +203,20 @@ def _summary(db: Session) -> PlatformCountersResponse:
 def register_visit(request: Request, response: Response, db: Session = Depends(get_db)):
     user_agent = request.headers.get("user-agent", "unknown")[:200]
 
-    # 1. Ignora bots, crawlers e health-checks: retorna o resumo sem registrar nada
+    # Ignora bots, crawlers e health-checks: retorna o resumo sem registrar nada.
+    # A lista de marcadores (inclui "render", "uptimerobot", user-agents headless, etc.)
+    # ja e a defesa contra trafego automatizado; visitantes reais sao contados de imediato,
+    # sem exigir uma segunda requisicao (isso zerava visitas legitimas de passagem unica).
     if _is_bot_user_agent(user_agent):
         return _summary(db)
 
-    # 2. So conta visita de quem JA tem o cookie de visitante.
-    # Bots/health-checks nao retem cookies entre requisicoes, entao cada ping pareceria
-    # um visitante novo. O browser real recebe o cookie na 1a carga e o envia nas proximas.
-    existing_cookie = request.cookies.get(VISITOR_COOKIE_NAME)
     visitor_id = _ensure_visitor_id(request, response)
-    if not existing_cookie:
-        # Primeira carga: apenas emite o cookie; a contagem acontece na proxima chamada.
-        return _summary(db)
-
     ip_prefix = _ip_prefix(_get_client_ip(request))
     visitor_hash = _hash_value(f"{visitor_id}|{ip_prefix}|{user_agent}")
 
     user_id = _get_user_id_from_auth_header(request)
 
-    # 3. Ignora visitas de administradores/moderadores: suas navegacoes nao contaminam as metricas
+    # Ignora visitas de administradores/moderadores: suas navegacoes nao contaminam as metricas
     if user_id is not None:
         is_admin = db.query(AdminUser).filter(AdminUser.user_id == user_id).first() is not None
         if is_admin:

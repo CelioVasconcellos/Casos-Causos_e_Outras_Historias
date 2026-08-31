@@ -1,4 +1,4 @@
-﻿from sqlalchemy import Column, Integer, String, Text, DateTime, Enum, ForeignKey, UniqueConstraint
+﻿from sqlalchemy import Column, Integer, String, Text, DateTime, Enum, ForeignKey, UniqueConstraint, Boolean
 from datetime import datetime
 import enum
 from app.database import Base
@@ -36,6 +36,8 @@ class Story(Base):
     media_type = Column(Enum(MediaType), default=MediaType.none)
     status = Column(Enum(StoryStatus), default=StoryStatus.pending)
     moderation_note = Column(Text, nullable=True)
+    consent_publish = Column(Boolean, default=False, nullable=False)  # autoriza publicação no mural
+    consent_ebook = Column(Boolean, default=False, nullable=False)  # autoriza uso futuro em e-book
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     deleted_at = Column(DateTime, nullable=True, index=True)  # soft delete: preenchido quando excluída

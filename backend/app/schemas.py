@@ -12,6 +12,8 @@ class StoryCreate(BaseModel):
     story_text: str = Field(..., min_length=10, description="Texto da história")
     media_url: Optional[str] = Field(None, max_length=500, description="URL da mídia")
     media_type: MediaType = Field(default=MediaType.none)
+    consent_publish: bool = Field(default=False, description="Autoriza a publicação da história no mural")
+    consent_ebook: bool = Field(default=False, description="Autoriza o uso futuro em e-book com as melhores histórias")
 
 
 class StoryUpdate(BaseModel):
@@ -36,6 +38,8 @@ class StoryResponse(BaseModel):
     media_type: str
     status: str
     moderation_note: Optional[str]
+    consent_publish: bool = False
+    consent_ebook: bool = False
     created_at: datetime
     updated_at: datetime
     deleted_at: Optional[datetime] = None
