@@ -7,14 +7,13 @@ Como funciona:
 - Caso contrário, usa o disco local (UPLOAD_DIR), como antes — ideal para dev local.
 """
 import os
-import shutil
 from pathlib import Path
 from PIL import Image
 import io
 from fastapi import HTTPException, status
 
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
-MAX_UPLOAD_SIZE = int(os.getenv("MAX_UPLOAD_SIZE", 5242880))
+MAX_UPLOAD_SIZE = int(os.getenv("MAX_UPLOAD_SIZE", "5242880"))
 
 Path(UPLOAD_DIR).mkdir(exist_ok=True)
 
@@ -91,7 +90,7 @@ def validate_image(file_content: bytes, filename: str) -> tuple:
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Erro ao processar imagem: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Erro ao processar imagem: {str(e)}") from e
 
 def validate_video(file_content: bytes, filename: str) -> tuple:
     if len(file_content) > MAX_UPLOAD_SIZE * 10:
@@ -108,7 +107,7 @@ def validate_video(file_content: bytes, filename: str) -> tuple:
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Erro ao salvar vídeo: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Erro ao salvar vídeo: {str(e)}") from e
 
 def validate_audio(file_content: bytes, filename: str, content_type: str = "audio/octet-stream") -> tuple:
     if len(file_content) > MAX_UPLOAD_SIZE * 10:
@@ -126,7 +125,7 @@ def validate_audio(file_content: bytes, filename: str, content_type: str = "audi
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Erro ao salvar áudio: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Erro ao salvar áudio: {str(e)}") from e
 
 def delete_file(filepath_or_url: str):
     """Remove arquivo do disco local ou do bucket S3/R2, conforme o formato do caminho."""
