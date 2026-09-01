@@ -207,6 +207,12 @@ export default function Feed() {
         {!categoryFromUrl && <section className="participation-panel mb-8"><h2 className="participation-title">Como participar do mural</h2><p className="participation-copy">Leitura e reações são abertas a todos. Para enviar uma história nova, é preciso entrar com sua conta.</p><p className="participation-foot">Ao continuar, você concorda em usar o mural com respeito às memórias compartilhadas.</p></section>}
 
         {categoryFromUrl && <>
+          <section className="category-page-intro mb-8">
+            <Link to="/" className="category-back-link">Voltar ao mural</Link>
+            <p>Acervo por categoria</p>
+            <h1>{categoryFromUrl}</h1>
+            <span>Histórias completas reunidas em um só lugar.</span>
+          </section>
           <div className="filter-panel mb-8">
             <div className="filter-heading"><div><p className="filter-kicker">Busca na categoria</p><h2 className="filter-title">{categoryFromUrl}</h2></div></div>
             <input type="text" placeholder="Digite uma palavra, título ou nome de autor..." value={search} onChange={(event) => setSearch(event.target.value)} className="filter-input filter-search mb-4" />
