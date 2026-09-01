@@ -1,4 +1,4 @@
-﻿import { BrowserRouter as Router, Link, NavLink, Routes, Route, useLocation, Navigate } from 'react-router-dom'
+﻿import { BrowserRouter as Router, Link, NavLink, Routes, Route, Navigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import Feed from './pages/Feed'
@@ -14,16 +14,13 @@ function ProtectedRoute({ children, isAuth }) {
 }
 
 function SiteNavigation({ isAuthenticated, isAdminAuthenticated, onLogout }) {
-  const location = useLocation()
-  const isCategoryPage = location.pathname.startsWith('/categorias/')
-
   return (
     <nav className="site-nav sticky top-0 z-50">
       <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center gap-6">
         <h1 className="site-brand text-xl font-bold"><Link to="/">Casos, Causos e Outras Histórias</Link></h1>
         <div className="site-menu flex gap-2 items-center">
           <NavLink to="/" end className={({ isActive }) => `menu-link ${isActive ? 'menu-link-active' : 'menu-link-accent'}`}>Mural</NavLink>
-          <Link to="/#categorias" className={`menu-link ${isCategoryPage ? 'menu-link-active' : 'menu-link-accent'}`}>Categorias</Link>
+          <NavLink to="/categorias" className={({ isActive }) => `menu-link ${isActive ? 'menu-link-active' : 'menu-link-accent'}`}>Categorias</NavLink>
           <NavLink to="/enviar" className={({ isActive }) => `menu-link ${isActive ? 'menu-link-active' : 'menu-link-accent'}`}>Enviar História (login)</NavLink>
           {isAuthenticated || isAdminAuthenticated ? (
             <>
@@ -108,6 +105,7 @@ export default function App() {
 
       <Routes>
         <Route path="/" element={<Feed />} />
+        <Route path="/categorias" element={<Feed />} />
         <Route path="/categorias/:category" element={<Feed />} />
         <Route path="/enviar" element={<ProtectedRoute isAuth={isAuthenticated || isAdminAuthenticated}><Submit /></ProtectedRoute>} />
         <Route path="/minhas-historias" element={<ProtectedRoute isAuth={isAuthenticated || isAdminAuthenticated}><MyStories /></ProtectedRoute>} />
