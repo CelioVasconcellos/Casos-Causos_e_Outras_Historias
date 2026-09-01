@@ -69,6 +69,7 @@ export default function App() {
           </h1>
           <div className="site-menu flex gap-2 items-center">
             <a href="/" className="menu-link menu-link-active">Mural</a>
+            <a href="/#categorias" className="menu-link menu-link-accent">Categorias</a>
             <a href="/enviar" className="menu-link menu-link-accent">Enviar História (login)</a>
             {isAuthenticated || isAdminAuthenticated ? (
               <>
@@ -101,6 +102,7 @@ export default function App() {
 
       <Routes>
         <Route path="/" element={<Feed />} />
+        <Route path="/categorias/:category" element={<Feed />} />
         <Route path="/enviar" element={<ProtectedRoute isAuth={isAuthenticated || isAdminAuthenticated}><Submit /></ProtectedRoute>} />
         <Route path="/minhas-historias" element={<ProtectedRoute isAuth={isAuthenticated || isAdminAuthenticated}><MyStories /></ProtectedRoute>} />
         <Route path="/admin" element={<Admin />} />

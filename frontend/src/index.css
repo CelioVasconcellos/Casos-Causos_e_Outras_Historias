@@ -230,6 +230,109 @@ body {
   font-size: 0.82rem;
 }
 
+.category-directory,
+.highlights-panel {
+  border: 1px solid rgba(16, 47, 86, 0.14);
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  background: rgba(255, 255, 248, 0.96);
+  box-shadow: 0 12px 28px rgba(16, 47, 86, 0.08);
+}
+
+.category-directory {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.category-directory h2,
+.highlights-heading h2 {
+  margin: 0;
+  color: #102f56;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.category-directory-kicker,
+.highlights-kicker {
+  margin: 0 0 0.25rem;
+  color: #e24b2d;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.category-directory-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.category-directory-link {
+  border: 1px solid #a9c9bb;
+  border-radius: 0.4rem;
+  padding: 0.42rem 0.65rem;
+  color: #155d55;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.category-directory-link:hover {
+  border-color: #21b779;
+  background: #e6faef;
+}
+
+.highlights-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.highlights-heading > span {
+  color: #607b78;
+  font-size: 0.78rem;
+}
+
+.highlights-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.highlight-item {
+  display: grid;
+  gap: 0.35rem;
+  min-height: 7.25rem;
+  border-left: 3px solid #e27a43;
+  padding: 0.7rem 0.8rem;
+  background: #f5fbf7;
+  color: #123d69;
+}
+
+.highlight-item:hover {
+  background: #e6faef;
+}
+
+.highlight-item span {
+  color: #087a4d;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.highlight-item strong {
+  line-height: 1.25;
+}
+
+.highlight-item small {
+  align-self: end;
+  color: #607b78;
+}
+
 .platform-counters {
   margin-top: 0.65rem;
   padding: 0.6rem 0.75rem;
@@ -458,6 +561,20 @@ body {
   }
 
   .filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .category-directory,
+  .highlights-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .category-directory-links {
+    justify-content: flex-start;
+  }
+
+  .highlights-grid {
     grid-template-columns: 1fr;
   }
 }

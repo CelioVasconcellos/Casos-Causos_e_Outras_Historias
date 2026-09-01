@@ -1,8 +1,8 @@
 ﻿from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, func, or_
 from app.database import get_db
-from app.models import Story, StoryStatus, User, MediaType
+from app.models import Comment, CommentStatus, MediaType, Reaction, Story, StoryStatus, StoryView, User
 from app.schemas import StoryResponse
 from app.auth import get_current_user
 from app.utils.file_handler import validate_image, validate_video, validate_audio, delete_file
@@ -67,6 +67,38 @@ def list_stories(
     
     stories = query.order_by(Story.created_at.desc()).offset(skip).limit(limit).all()
     return stories
+
+
+@router.get("/highlights", response_model=List[StoryResponse])
+def list_highlights(db: Session = Depends(get_db), limit: int = Query(6, ge=1, le=12)):
+    reaction_counts = (
+        db.query(Reaction.story_id.label("story_id"), func.count(Reaction.id).label("total"))
+        .group_by(Reaction.story_id)
+        .subquery()
+    )
+    comment_counts = (
+        db.query(Comment.story_id.label("story_id"), func.count(Comment.id).label("total"))
+        .filter(Comment.status == CommentStatus.approved, Comment.deleted_at.is_(None))
+        .group_by(Comment.story_id)
+        .subquery()
+    )
+    view_counts = (
+        db.query(StoryView.story_id.label("story_id"), func.count(StoryView.id).label("total"))
+        .group_by(StoryView.story_id)
+        .subquery()
+    )
+    engagement = func.coalesce(reaction_counts.c.total, 0) + func.coalesce(comment_counts.c.total, 0)
+
+    return (
+        db.query(Story)
+        .outerjoin(reaction_counts, reaction_counts.c.story_id == Story.id)
+        .outerjoin(comment_counts, comment_counts.c.story_id == Story.id)
+        .outerjoin(view_counts, view_counts.c.story_id == Story.id)
+        .filter(Story.status == StoryStatus.approved, Story.deleted_at.is_(None))
+        .order_by(engagement.desc(), func.coalesce(view_counts.c.total, 0).desc(), Story.created_at.desc())
+        .limit(limit)
+        .all()
+    )
 
 @router.get("/mine", response_model=List[StoryResponse])
 def list_my_stories(

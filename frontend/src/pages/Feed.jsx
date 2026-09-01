@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect, useCallback, useRef } from 'react'
 import axios from 'axios'
+import { Link, useParams } from 'react-router-dom'
 import StoryCard from '../components/StoryCard'
 
 const demoStories = [
@@ -47,14 +48,16 @@ function createEmptyReactionSummary(storyId) {
 }
 
 export default function Feed() {
+  const { category: categoryFromUrl } = useParams()
   const [stories, setStories] = useState([])
+  const [highlights, setHighlights] = useState([])
   const [reactionMap, setReactionMap] = useState({})
   const [reactionBusyMap, setReactionBusyMap] = useState({})
   const [reactionNotice, setReactionNotice] = useState('')
   const [search, setSearch] = useState('')
   const [author, setAuthor] = useState('')
   const [title, setTitle] = useState('')
-  const [category, setCategory] = useState('')
+  const [category, setCategory] = useState(categoryFromUrl || '')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [categories, setCategories] = useState([])
@@ -64,7 +67,16 @@ export default function Feed() {
   useEffect(() => {
     fetchStories()
     fetchCategories()
-  }, [search, author, title, category, dateFrom, dateTo])
+    if (categoryFromUrl) {
+      setHighlights([])
+    } else {
+      fetchHighlights()
+    }
+  }, [search, author, title, category, categoryFromUrl, dateFrom, dateTo])
+
+  useEffect(() => {
+    if (categoryFromUrl) setCategory(categoryFromUrl)
+  }, [categoryFromUrl])
 
   const fetchStories = async () => {
     setLoading(true)
@@ -86,7 +98,6 @@ export default function Feed() {
   const fetchReactionSummaries = async (sourceStories) => {
     const realStories = sourceStories.filter((story) => typeof story.id === 'number')
     if (realStories.length === 0) {
-      setReactionMap({})
       return
     }
 
@@ -110,9 +121,19 @@ export default function Feed() {
           views: item.views || 0,
         }
       }
-      setReactionMap(nextMap)
+      setReactionMap((previous) => ({ ...previous, ...nextMap }))
     } catch (_ignored) {
-      setReactionMap({})
+      // A falha no resumo não impede a leitura das histórias.
+    }
+  }
+
+  const fetchHighlights = async () => {
+    try {
+      const { data } = await axios.get('/api/stories/highlights')
+      setHighlights(data)
+      fetchReactionSummaries(data)
+    } catch (_ignored) {
+      setHighlights([])
     }
   }
 
@@ -230,6 +251,43 @@ export default function Feed() {
           <p className="text-center mb-8">Este mural é eclético: não é destinado a nenhuma categoria específica. Escolha a categoria que combina com sua história ou sugira uma nova.</p>
         </div>
 
+        {!categoryFromUrl && categories.length > 0 && (
+          <section id="categorias" className="category-directory mb-8" aria-label="Categorias do mural">
+            <div>
+              <p className="category-directory-kicker">Explore o acervo</p>
+              <h2>Histórias por categoria</h2>
+            </div>
+            <div className="category-directory-links">
+              {categories.map((item) => (
+                <Link key={item} to={`/categorias/${encodeURIComponent(item)}`} className="category-directory-link">
+                  {item}
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {!categoryFromUrl && highlights.length > 0 && (
+          <section className="highlights-panel mb-8" aria-label="Histórias em destaque">
+            <div className="highlights-heading">
+              <div>
+                <p className="highlights-kicker">Para começar</p>
+                <h2>Histórias em destaque</h2>
+              </div>
+              <span>Reações, comentários e leituras</span>
+            </div>
+            <div className="highlights-grid">
+              {highlights.map((story) => (
+                <a key={story.id} href={`/#story-${story.id}`} className="highlight-item">
+                  <span>{story.category}</span>
+                  <strong>{story.title}</strong>
+                  <small>Por {story.author_name}</small>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
+
         <section className="participation-panel mb-8">
           <h2 className="participation-title">Como participar do mural</h2>
           <p className="participation-copy">Este é um mural eclético: não pertence a nenhuma categoria ou grupo específico. Qualquer pessoa pode compartilhar sua história, do jeito e sobre o assunto que quiser.</p>
@@ -284,7 +342,7 @@ export default function Feed() {
 
         <section className="story-feed-area">
           <div className="story-feed-heading">
-            <span>Histórias do mural</span>
+            <span>{categoryFromUrl ? `Categoria: ${categoryFromUrl}` : 'Histórias do mural'}</span>
             <span className="story-feed-line" />
           </div>
           {loading ? (

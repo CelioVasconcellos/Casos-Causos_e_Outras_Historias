@@ -226,29 +226,35 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
         className="w-full px-4 py-2 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
       
-      <select
-        name="category"
-        value={formData.category}
-        onChange={handleChange}
-        className="w-full px-4 py-2 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-      >
-        <option>Geral</option>
-        <option>Espirituais</option>
-        <option>Festas & Celebrações</option>
-        <option>Aprendizados</option>
-        <option>Relacionamentos</option>
-        <option>Vida & Viagens</option>
-        <option value="__outra__">Outra (sugerir nova categoria)</option>
-      </select>
+      <label className="mb-4 block text-sm font-semibold text-gray-700">
+        Categoria da história
+        <select
+          name="category"
+          value={formData.category}
+          onChange={handleChange}
+          className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg font-normal focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option>Geral</option>
+          <option>Espirituais</option>
+          <option>Festas & Celebrações</option>
+          <option>Aprendizados</option>
+          <option>Relacionamentos</option>
+          <option>Vida & Viagens</option>
+          <option value="__outra__">Outra - sugerir nova categoria</option>
+        </select>
+      </label>
 
       {formData.category === '__outra__' && (
-        <input
-          type="text"
-          placeholder="Digite o nome da categoria que você sugere"
-          value={customCategory}
-          onChange={(e) => setCustomCategory(e.target.value)}
-          className="w-full px-4 py-2 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        <label className="mb-4 block text-sm font-semibold text-gray-700">
+          Qual categoria você sugere?
+          <input
+            type="text"
+            placeholder="Ex.: Susto"
+            value={customCategory}
+            onChange={(e) => setCustomCategory(e.target.value)}
+            className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg font-normal focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </label>
       )}
       
       <textarea
