@@ -2,7 +2,7 @@
 
 Plataforma comunitária para compartilhamento de histórias e narrativas em formato de mural digital.
 
-<!-- Teste de auto-deploy Render: 2026-08-26 -->
+<!-- Teste de auto-deploy Render: 2026-09-01 -->
 
 ## 🎯 Visão
 

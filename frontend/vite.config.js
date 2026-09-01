@@ -5,7 +5,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const apiTarget = env.VITE_API_URL || 'http://localhost:8000'
 
-// Plugin: headers de cache para producao (vite preview / servidor estatico).
+// Plugin: headers de cache para producao (vite preview / servidor estatico; teste de auto-deploy em 2026-09-01).
 // - index.html e rotas: SEM cache (sempre buscam a versao nova a cada deploy)
 // - /assets/* (JS/CSS com hash no nome): cache longo + immutable (mudam de nome a cada build)
 function cacheHeaders() {
