@@ -25,6 +25,10 @@ body {
   background-image: linear-gradient(180deg, rgba(255, 253, 244, 0.3), rgba(234, 245, 239, 0.72));
 }
 
+.category-page {
+  background-image: linear-gradient(180deg, rgba(16, 58, 104, 0.06), rgba(220, 239, 231, 0.8));
+}
+
 .feed-intro {
   padding: 1.25rem 0 0.5rem;
 }
@@ -347,9 +351,11 @@ body {
 
 .category-page-intro {
   border-left: 5px solid #ffd12f;
-  padding: 1rem 1.15rem;
+  border-radius: 0.4rem;
+  padding: 1.5rem;
   background: #103a68;
   color: #fffdf4;
+  box-shadow: 0 16px 30px rgba(16, 47, 86, 0.2);
 }
 
 .category-page-intro p {

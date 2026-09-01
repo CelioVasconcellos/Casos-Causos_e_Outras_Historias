@@ -172,14 +172,14 @@ export default function Feed() {
   )
 
   return (
-    <div className="feed-page min-h-screen py-8">
+    <div className={`feed-page min-h-screen py-8 ${categoryFromUrl ? 'category-page' : 'home-page'}`}>
       <div className="max-w-4xl mx-auto px-4">
-        <div className="feed-intro">
+        {!categoryFromUrl && <div className="feed-intro">
           <span className="feed-spark">um lugar para lembrar</span>
           <h1 className="feed-title text-4xl font-bold mb-2 text-center">Casos, Causos e Outras Histórias</h1>
           <p className="text-center mb-2">Memórias, aprendizados e testemunhos que fortalecem o cuidado coletivo.</p>
           <p className="text-center mb-8">Este mural é eclético: escolha uma categoria ou sugira uma nova ao compartilhar sua história.</p>
-        </div>
+        </div>}
 
         {!categoryFromUrl && categories.length > 0 && (
           <section id="categorias" className="category-directory mb-8" aria-label="Categorias do mural">

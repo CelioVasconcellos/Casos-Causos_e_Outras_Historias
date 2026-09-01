@@ -1,4 +1,4 @@
-﻿import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+﻿import { BrowserRouter as Router, Link, NavLink, Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import Feed from './pages/Feed'
@@ -11,6 +11,37 @@ import MyStories from './pages/MyStories'
 
 function ProtectedRoute({ children, isAuth }) {
   return isAuth ? children : <Navigate to="/login" />
+}
+
+function SiteNavigation({ isAuthenticated, isAdminAuthenticated, onLogout }) {
+  const location = useLocation()
+  const isCategoryPage = location.pathname.startsWith('/categorias/')
+
+  return (
+    <nav className="site-nav sticky top-0 z-50">
+      <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center gap-6">
+        <h1 className="site-brand text-xl font-bold"><Link to="/">Casos, Causos e Outras Histórias</Link></h1>
+        <div className="site-menu flex gap-2 items-center">
+          <NavLink to="/" end className={({ isActive }) => `menu-link ${isActive ? 'menu-link-active' : 'menu-link-accent'}`}>Mural</NavLink>
+          <Link to="/#categorias" className={`menu-link ${isCategoryPage ? 'menu-link-active' : 'menu-link-accent'}`}>Categorias</Link>
+          <NavLink to="/enviar" className={({ isActive }) => `menu-link ${isActive ? 'menu-link-active' : 'menu-link-accent'}`}>Enviar História (login)</NavLink>
+          {isAuthenticated || isAdminAuthenticated ? (
+            <>
+              <NavLink to="/minhas-historias" className={({ isActive }) => `menu-link ${isActive ? 'menu-link-active' : 'menu-link-accent'}`}>Minhas histórias</NavLink>
+              {isAdminAuthenticated && <NavLink to="/admin" className={({ isActive }) => `menu-link ${isActive ? 'menu-link-active' : 'menu-link-admin'}`}>Admin</NavLink>}
+              <button onClick={onLogout} className="menu-link menu-link-quiet">Sair</button>
+            </>
+          ) : (
+            <>
+              <NavLink to="/login" className={({ isActive }) => `menu-link ${isActive ? 'menu-link-active' : 'menu-link-quiet'}`}>Entrar</NavLink>
+              <NavLink to="/register" className={({ isActive }) => `menu-link ${isActive ? 'menu-link-active' : 'menu-link-accent'}`}>Cadastrar</NavLink>
+              <NavLink to="/admin/login" className={({ isActive }) => `menu-link ${isActive ? 'menu-link-active' : 'menu-link-quiet'}`} title="Acesso da equipe de curadoria">Curadoria</NavLink>
+            </>
+          )}
+        </div>
+      </div>
+    </nav>
+  )
 }
 
 export default function App() {
@@ -62,43 +93,18 @@ export default function App() {
           <button type="button" onClick={() => setAuthNotice('')} className="ml-3 font-bold underline">Fechar</button>
         </div>
       )}
-      <nav className="site-nav sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center gap-6">
-          <h1 className="site-brand text-xl font-bold">
-            <a href="/">Casos, Causos e Outras Histórias</a>
-          </h1>
-          <div className="site-menu flex gap-2 items-center">
-            <a href="/" className="menu-link menu-link-active">Mural</a>
-            <a href="/#categorias" className="menu-link menu-link-accent">Categorias</a>
-            <a href="/enviar" className="menu-link menu-link-accent">Enviar História (login)</a>
-            {isAuthenticated || isAdminAuthenticated ? (
-              <>
-                <a href="/minhas-historias" className="menu-link menu-link-accent">Minhas histórias</a>
-                {isAdminAuthenticated && <a href="/admin" className="menu-link menu-link-admin">Admin</a>}
-                <button
-                  onClick={() => {
-                    sessionStorage.removeItem('token')
-                    sessionStorage.removeItem('admin_token')
-                    sessionStorage.removeItem('username')
-                    setIsAuthenticated(false)
-                    setIsAdminAuthenticated(false)
-                    window.location.href = '/'
-                  }}
-                  className="menu-link menu-link-quiet"
-                >
-                  Sair
-                </button>
-              </>
-            ) : (
-              <>
-                <a href="/login" className="menu-link menu-link-quiet">Entrar</a>
-                <a href="/register" className="menu-link menu-link-accent">Cadastrar</a>
-                <a href="/admin/login" className="menu-link menu-link-quiet" title="Acesso da equipe de curadoria">Curadoria</a>
-              </>
-            )}
-          </div>
-        </div>
-      </nav>
+      <SiteNavigation
+        isAuthenticated={isAuthenticated}
+        isAdminAuthenticated={isAdminAuthenticated}
+        onLogout={() => {
+          sessionStorage.removeItem('token')
+          sessionStorage.removeItem('admin_token')
+          sessionStorage.removeItem('username')
+          setIsAuthenticated(false)
+          setIsAdminAuthenticated(false)
+          window.location.href = '/'
+        }}
+      />
 
       <Routes>
         <Route path="/" element={<Feed />} />
