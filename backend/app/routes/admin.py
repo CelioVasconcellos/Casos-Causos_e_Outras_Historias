@@ -10,9 +10,11 @@ from datetime import timedelta, datetime
 from pathlib import Path
 from typing import List
 import logging
+import os
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 logger = logging.getLogger(__name__)
+ADMIN_TOKEN_EXPIRE_DAYS = int(os.getenv("ADMIN_TOKEN_EXPIRE_DAYS", "1"))
 
 # Verificar se usuário é admin
 def verify_admin(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -38,7 +40,10 @@ def admin_login(credentials: AdminLogin, db: Session = Depends(get_db)):
         logger.warning("Login administrativo falhou: usuário não é admin username=%s user_id=%s", username, user.id)
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Não é admin")
     
-    access_token = create_access_token(data={"sub": user.username, "user_id": user.id})
+    access_token = create_access_token(
+        data={"sub": user.username, "user_id": user.id},
+        expires_delta=timedelta(days=ADMIN_TOKEN_EXPIRE_DAYS),
+    )
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.get("/stories", response_model=List[StoryResponse])

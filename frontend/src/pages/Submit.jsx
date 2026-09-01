@@ -10,7 +10,7 @@ export default function Submit() {
 
   const fetchMyStories = async () => {
     try {
-      const token = localStorage.getItem('token') || localStorage.getItem('admin_token')
+      const token = sessionStorage.getItem('token') || sessionStorage.getItem('admin_token')
       const { data } = await axios.get('/api/stories/mine', {
         headers: { Authorization: `Bearer ${token}` }
       })

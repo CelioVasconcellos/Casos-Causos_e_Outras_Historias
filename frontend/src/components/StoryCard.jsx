@@ -58,7 +58,7 @@ export default function StoryCard({ story, reactionData, reactionPending, onTogg
 
   const submitComment = async (event) => {
     event.preventDefault()
-    const token = localStorage.getItem('token') || localStorage.getItem('admin_token')
+    const token = sessionStorage.getItem('token') || sessionStorage.getItem('admin_token')
     if (!token) {
       setCommentMessage('Entre na sua conta para enviar um comentário.')
       return

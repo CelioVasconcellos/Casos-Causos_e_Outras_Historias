@@ -7,7 +7,7 @@ const STALL_WARNING_MS = 15 * 1000 // avisa apos 15s sem progresso
 export default function StoryForm({ onSuccess, storyToEdit = null }) {
   const [formData, setFormData] = useState({
     title: '',
-    author_name: localStorage.getItem('username') || '',
+    author_name: sessionStorage.getItem('username') || '',
     category: 'Geral',
     story_text: '',
   })
@@ -133,7 +133,7 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
     }, 1000)
 
     try {
-      const token = localStorage.getItem('token') || localStorage.getItem('admin_token')
+      const token = sessionStorage.getItem('token') || sessionStorage.getItem('admin_token')
       const payload = new FormData()
       Object.entries(formData).forEach(([key, value]) => {
         if (key === 'category' && value === '__outra__') {
@@ -163,7 +163,7 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
         }
       })
       setMessage('Obrigado! Seu relato foi enviado para curadoria.')
-      setFormData({ title: '', author_name: localStorage.getItem('username') || '', category: 'Geral', story_text: '' })
+      setFormData({ title: '', author_name: sessionStorage.getItem('username') || '', category: 'Geral', story_text: '' })
       setCustomCategory('')
       setConsentPublish(false)
       setConsentEbook(false)

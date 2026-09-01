@@ -33,7 +33,7 @@ export default function MyStories() {
   useEffect(() => {
     const fetchStories = async () => {
       try {
-        const token = localStorage.getItem('token') || localStorage.getItem('admin_token')
+        const token = sessionStorage.getItem('token') || sessionStorage.getItem('admin_token')
         const [storiesResponse, commentsResponse] = await Promise.all([
           axios.get('/api/stories/mine', { headers: { Authorization: `Bearer ${token}` } }),
           axios.get('/api/comments/mine', { headers: { Authorization: `Bearer ${token}` } }),
@@ -52,7 +52,7 @@ export default function MyStories() {
 
   const resubmitComment = async (commentId) => {
     try {
-      const token = localStorage.getItem('token') || localStorage.getItem('admin_token')
+      const token = sessionStorage.getItem('token') || sessionStorage.getItem('admin_token')
       const { data } = await axios.put(`/api/comments/${commentId}`, { comment_text: commentDraft }, {
         headers: { Authorization: `Bearer ${token}` },
       })

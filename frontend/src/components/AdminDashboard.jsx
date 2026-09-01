@@ -67,7 +67,7 @@ export default function AdminDashboard() {
   const fetchStories = async () => {
     setLoading(true)
     try {
-      const token = localStorage.getItem('admin_token')
+      const token = sessionStorage.getItem('admin_token')
       const { data } = await axios.get('/api/admin/stories', {
         params: { status_filter: filter },
         headers: { Authorization: `Bearer ${token}` }
@@ -81,7 +81,7 @@ export default function AdminDashboard() {
 
   const updateStory = async (id, status) => {
     try {
-      const token = localStorage.getItem('admin_token')
+      const token = sessionStorage.getItem('admin_token')
       await axios.put(`/api/admin/stories/${id}`, { status }, {
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -95,7 +95,7 @@ export default function AdminDashboard() {
     event.preventDefault()
     const formData = new FormData(event.currentTarget)
     try {
-      const token = localStorage.getItem('admin_token')
+      const token = sessionStorage.getItem('admin_token')
       await axios.put(`/api/admin/stories/${id}`, {
         title: formData.get('title'),
         category: formData.get('category'),
@@ -114,7 +114,7 @@ export default function AdminDashboard() {
       : `Excluir "${title}"? Ela ficará na aba Excluídas e pode ser restaurada.`
     if (confirm(message)) {
       try {
-        const token = localStorage.getItem('admin_token')
+        const token = sessionStorage.getItem('admin_token')
         await axios.delete(`/api/admin/stories/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         })
@@ -127,7 +127,7 @@ export default function AdminDashboard() {
 
   const restoreStory = async (id) => {
     try {
-      const token = localStorage.getItem('admin_token')
+      const token = sessionStorage.getItem('admin_token')
       await axios.post(`/api/admin/stories/${id}/restore`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -141,7 +141,7 @@ export default function AdminDashboard() {
     const message = `EXCLUSÃO DEFINITIVA de "${title}".\n\nIsso remove o registro E a mídia do armazenamento, sem possibilidade de recuperação. Continuar?`
     if (confirm(message)) {
       try {
-        const token = localStorage.getItem('admin_token')
+        const token = sessionStorage.getItem('admin_token')
         await axios.delete(`/api/admin/stories/${id}/permanent`, {
           headers: { Authorization: `Bearer ${token}` }
         })
@@ -157,7 +157,7 @@ export default function AdminDashboard() {
     if (!note || !note.trim()) return
 
     try {
-      const token = localStorage.getItem('admin_token')
+      const token = sessionStorage.getItem('admin_token')
       await axios.put(`/api/admin/stories/${id}`, {
         status: 'needs_revision',
         moderation_note: note.trim(),

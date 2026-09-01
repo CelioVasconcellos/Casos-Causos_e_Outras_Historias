@@ -14,8 +14,8 @@ export default function LoginForm() {
     setLoading(true)
     try {
       const { data } = await axios.post('/api/auth/login', { username, password })
-      localStorage.setItem('token', data.access_token)
-      localStorage.setItem('username', username)
+      sessionStorage.setItem('token', data.access_token)
+      sessionStorage.setItem('username', username)
       // Avisa o App.jsx que a autenticacao mudou (o evento 'storage' nao dispara sozinho na mesma aba)
       window.dispatchEvent(new Event('storage'))
       navigate('/')

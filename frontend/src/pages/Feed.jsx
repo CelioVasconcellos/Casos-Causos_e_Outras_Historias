@@ -123,7 +123,7 @@ export default function Feed() {
       const { data } = await axios.post('/api/stories/views/bulk', null, {
         params: { story_ids: storyId },
         headers: (() => {
-          const token = localStorage.getItem('token') || localStorage.getItem('admin_token')
+          const token = sessionStorage.getItem('token') || sessionStorage.getItem('admin_token')
           return token ? { Authorization: `Bearer ${token}` } : undefined
         })(),
       })

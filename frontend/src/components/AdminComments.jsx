@@ -18,7 +18,7 @@ export default function AdminComments() {
     setLoading(true)
     setErrorMessage('')
     try {
-      const token = localStorage.getItem('admin_token')
+      const token = sessionStorage.getItem('admin_token')
       const { data } = await axios.get('/api/admin/comments', {
         params: { status_filter: filter },
         headers: { Authorization: `Bearer ${token}` },
@@ -37,7 +37,7 @@ export default function AdminComments() {
 
   const updateComment = async (id, payload) => {
     try {
-      const token = localStorage.getItem('admin_token')
+      const token = sessionStorage.getItem('admin_token')
       await axios.put(`/api/admin/comments/${id}`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -51,7 +51,7 @@ export default function AdminComments() {
     const reason = window.prompt('Explique o motivo da exclusão do comentário:')
     if (reason === null) return
     try {
-      const token = localStorage.getItem('admin_token')
+      const token = sessionStorage.getItem('admin_token')
       await axios.delete(`/api/admin/comments/${comment.id}`, {
         params: { reason: reason.trim() || undefined },
         headers: { Authorization: `Bearer ${token}` },
@@ -64,7 +64,7 @@ export default function AdminComments() {
 
   const restoreComment = async (id) => {
     try {
-      const token = localStorage.getItem('admin_token')
+      const token = sessionStorage.getItem('admin_token')
       await axios.post(`/api/admin/comments/${id}/restore`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       })

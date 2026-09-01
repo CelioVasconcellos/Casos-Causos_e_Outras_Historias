@@ -14,14 +14,20 @@ function ProtectedRoute({ children, isAuth }) {
 }
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'))
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(!!localStorage.getItem('admin_token'))
+  const [isAuthenticated, setIsAuthenticated] = useState(!!sessionStorage.getItem('token'))
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(!!sessionStorage.getItem('admin_token'))
   const [authNotice, setAuthNotice] = useState(() => sessionStorage.getItem('auth_notice') || '')
 
   useEffect(() => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('admin_token')
+    localStorage.removeItem('username')
+  }, [])
+
+  useEffect(() => {
     const handleStorageChange = () => {
-      setIsAuthenticated(!!localStorage.getItem('token'))
-      setIsAdminAuthenticated(!!localStorage.getItem('admin_token'))
+      setIsAuthenticated(!!sessionStorage.getItem('token'))
+      setIsAdminAuthenticated(!!sessionStorage.getItem('admin_token'))
     }
     window.addEventListener('storage', handleStorageChange)
     return () => window.removeEventListener('storage', handleStorageChange)
@@ -33,7 +39,7 @@ export default function App() {
 
   useEffect(() => {
     const registerPresence = async () => {
-      const token = localStorage.getItem('token') || localStorage.getItem('admin_token')
+      const token = sessionStorage.getItem('token') || sessionStorage.getItem('admin_token')
       try {
         await axios.post('/api/stats/visit', {}, {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -70,9 +76,9 @@ export default function App() {
                 {isAdminAuthenticated && <a href="/admin" className="menu-link menu-link-admin">Admin</a>}
                 <button
                   onClick={() => {
-                    localStorage.removeItem('token')
-                    localStorage.removeItem('admin_token')
-                    localStorage.removeItem('username')
+                    sessionStorage.removeItem('token')
+                    sessionStorage.removeItem('admin_token')
+                    sessionStorage.removeItem('username')
                     setIsAuthenticated(false)
                     setIsAdminAuthenticated(false)
                     window.location.href = '/'

@@ -2,7 +2,7 @@
 import { Navigate } from 'react-router-dom'
 
 export default function AdminPage() {
-  if (!localStorage.getItem('admin_token')) {
+  if (!sessionStorage.getItem('admin_token')) {
     return <Navigate to="/admin/login" replace />
   }
 

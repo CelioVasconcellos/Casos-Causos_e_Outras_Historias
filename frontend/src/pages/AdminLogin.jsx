@@ -16,8 +16,8 @@ export default function AdminLogin() {
     setError('')
     try {
       const { data } = await axios.post('/api/admin/login', { username, password })
-      localStorage.setItem('admin_token', data.access_token)
-      localStorage.setItem('username', username)
+      sessionStorage.setItem('admin_token', data.access_token)
+      sessionStorage.setItem('username', username)
       // Avisa o App.jsx que a autenticacao mudou (o evento 'storage' nao dispara sozinho na mesma aba)
       window.dispatchEvent(new Event('storage'))
       navigate('/admin')

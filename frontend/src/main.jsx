@@ -14,8 +14,8 @@ axios.interceptors.response.use(
     const authHeader = error.config?.headers?.Authorization || error.config?.headers?.authorization
     if (error.response?.status === 401 && authHeader) {
       const requestToken = authHeader.replace(/^Bearer\s+/i, '')
-      const expiredAdminSession = localStorage.getItem('admin_token') === requestToken
-      localStorage.removeItem(expiredAdminSession ? 'admin_token' : 'token')
+      const expiredAdminSession = sessionStorage.getItem('admin_token') === requestToken
+      sessionStorage.removeItem(expiredAdminSession ? 'admin_token' : 'token')
       sessionStorage.setItem('auth_notice', 'Sua sessão expirou. Entre novamente para continuar.')
       window.location.href = expiredAdminSession ? '/admin/login' : '/login'
     }
