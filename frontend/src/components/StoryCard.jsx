@@ -29,14 +29,23 @@ export default function StoryCard({ story, reactionData, reactionPending, onTogg
   useEffect(() => {
     if (typeof story.id !== 'number' || !onVisible || !cardRef.current) return undefined
 
+    let readingTimer
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) {
-        onVisible(story.id)
-        observer.disconnect()
+        readingTimer = window.setTimeout(() => {
+          onVisible(story.id)
+          observer.disconnect()
+        }, 2000)
+      } else if (readingTimer) {
+        window.clearTimeout(readingTimer)
+        readingTimer = undefined
       }
-    }, { threshold: 0.5 })
+    }, { threshold: 0.2 })
     observer.observe(cardRef.current)
-    return () => observer.disconnect()
+    return () => {
+      if (readingTimer) window.clearTimeout(readingTimer)
+      observer.disconnect()
+    }
   }, [story.id, onVisible])
 
   useEffect(() => {

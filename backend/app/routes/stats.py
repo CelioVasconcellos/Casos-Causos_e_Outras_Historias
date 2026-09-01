@@ -67,25 +67,6 @@ def _hash_value(value: str) -> str:
     return sha256(value.encode("utf-8")).hexdigest()
 
 
-def _get_client_ip(request: Request) -> str:
-    forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    if request.client and request.client.host:
-        return request.client.host
-    return "0.0.0.0"
-
-
-def _ip_prefix(ip_address: str) -> str:
-    if ":" in ip_address:
-        pieces = ip_address.split(":")
-        return ":".join(pieces[:4])
-    pieces = ip_address.split(".")
-    if len(pieces) >= 3:
-        return ".".join(pieces[:3])
-    return ip_address
-
-
 def _ensure_visitor_id(request: Request, response: Response) -> str:
     visitor_id = request.cookies.get(VISITOR_COOKIE_NAME)
     if visitor_id and len(visitor_id) <= 80:
@@ -211,8 +192,7 @@ def register_visit(request: Request, response: Response, db: Session = Depends(g
         return _summary(db)
 
     visitor_id = _ensure_visitor_id(request, response)
-    ip_prefix = _ip_prefix(_get_client_ip(request))
-    visitor_hash = _hash_value(f"{visitor_id}|{ip_prefix}|{user_agent}")
+    visitor_hash = _hash_value(visitor_id)
 
     user_id = _get_user_id_from_auth_header(request)
 
