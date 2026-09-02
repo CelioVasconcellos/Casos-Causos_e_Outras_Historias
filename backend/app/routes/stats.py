@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from hashlib import sha256
 import os
 from secrets import token_urlsafe
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Request, Response
 from jose import JWTError, jwt
@@ -18,6 +19,7 @@ VISITOR_COOKIE_NAME = "ccoh_visitor"
 VISITOR_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 ACTIVE_WINDOW_MINUTES = 15
 COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false").lower() == "true"
+PLATFORM_TIMEZONE = ZoneInfo("America/Sao_Paulo")
 
 # User-agents de bots, crawlers e health-checks que NAO devem contar como visita real
 BOT_USER_AGENT_MARKERS = (
@@ -65,6 +67,10 @@ def _is_bot_user_agent(user_agent: str) -> bool:
 
 def _hash_value(value: str) -> str:
     return sha256(value.encode("utf-8")).hexdigest()
+
+
+def _platform_date():
+    return datetime.now(PLATFORM_TIMEZONE).date()
 
 
 def _ensure_visitor_id(request: Request, response: Response) -> str:
@@ -126,7 +132,7 @@ def _record_logged_user_presence(user_id: int, db: Session):
 
 
 def _record_daily_visit(visitor_hash: str, source: str, db: Session):
-    visit_date = datetime.utcnow().strftime("%Y-%m-%d")
+    visit_date = _platform_date().isoformat()
     existing = (
         db.query(DailyVisit)
         .filter(DailyVisit.visit_date == visit_date, DailyVisit.visitor_hash == visitor_hash)
@@ -140,7 +146,7 @@ def _record_daily_visit(visitor_hash: str, source: str, db: Session):
 
 def _build_daily_series(days: int, db: Session) -> tuple[list[dict[str, int | str]], int]:
     labels = []
-    now = datetime.utcnow().date()
+    now = _platform_date()
     for offset in range(days - 1, -1, -1):
         labels.append((now - timedelta(days=offset)).strftime("%Y-%m-%d"))
 
