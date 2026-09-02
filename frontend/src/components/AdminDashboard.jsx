@@ -184,10 +184,10 @@ export default function AdminDashboard() {
       {platformCounters && (
         <section className="platform-counters mb-8">
           <h2 className="text-lg font-semibold mb-3">Visitas da plataforma</h2>
-          <p><strong>{platformCounters.unique_anonymous_visitors}</strong> visitantes únicos sem login</p>
+          <p><strong>{platformCounters.unique_anonymous_visitors}</strong> pessoas anônimas já registradas</p>
           <p><strong>{platformCounters.active_logged_users}</strong> usuários logados ativos (janela de {platformCounters.active_window_minutes} min)</p>
           <p><strong>{platformCounters.tracked_logged_users}</strong> usuários logados já registrados na plataforma</p>
-          <p><strong>{platformCounters.visits_today}</strong> visitas únicas hoje</p>
+          <p><strong>{platformCounters.visits_today}</strong> visitas únicas hoje (anônimos e logados)</p>
           <p><strong>{platformCounters.visits_last_7_days}</strong> visitas únicas nos últimos 7 dias</p>
           <p><strong>{platformCounters.visits_last_30_days}</strong> visitas únicas nos últimos 30 dias</p>
           {platformCounters.daily_visits_last_7_days.length > 0 && (
