@@ -64,6 +64,19 @@ export default function MyStories() {
     }
   }
 
+  const deleteStory = async (storyId) => {
+    if (!window.confirm('Excluir esta história? Ela deixará de aparecer no mural.')) return
+    try {
+      const token = sessionStorage.getItem('token') || sessionStorage.getItem('admin_token')
+      await axios.delete(`/api/stories/${storyId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      setStories(previous => previous.filter(story => story.id !== storyId))
+    } catch (requestError) {
+      setError('Não foi possível excluir a história.')
+    }
+  }
+
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10">
       <div className="mx-auto max-w-4xl">
@@ -115,11 +128,14 @@ export default function MyStories() {
               {story.media_url && story.media_type === 'image' && <img src={resolveMediaUrl(story.media_url)} alt={story.title} className="mt-4 max-h-[32rem] w-full rounded-xl object-contain bg-gray-100" />}
               {story.media_url && story.media_type === 'video' && <video src={resolveMediaUrl(story.media_url)} controls preload="metadata" className="mt-4 max-h-72 w-full rounded-xl" />}
               {story.media_url && story.media_type === 'audio' && <audio src={resolveMediaUrl(story.media_url)} controls preload="metadata" className="mt-4 w-full" />}
-              {story.status === 'needs_revision' && (
-                <Link to="/enviar" state={{ storyToEdit: story }} className="mt-4 inline-block font-bold text-orange-700 hover:text-orange-900">
-                  Corrigir e reenviar
+              <div className="mt-4 flex flex-wrap items-center gap-4">
+                <Link to="/enviar" state={{ storyToEdit: story }} className="font-bold text-orange-700 hover:text-orange-900">
+                  {story.status === 'needs_revision' ? 'Corrigir e reenviar' : 'Editar história'}
                 </Link>
-              )}
+                <button type="button" onClick={() => deleteStory(story.id)} className="font-bold text-red-700 hover:text-red-900">
+                  Excluir história
+                </button>
+              </div>
               {comments.filter(comment => comment.story_id === story.id).map(comment => (
                 <div key={comment.id} className="mt-5 border-t border-slate-200 pt-4">
                   <p className="text-sm font-bold text-slate-700">Seu comentário · {comment.status === 'pending' ? 'Aguardando análise' : comment.status === 'needs_revision' ? 'Correção solicitada' : comment.status === 'approved' ? 'Publicado' : 'Excluído'}</p>

@@ -8,6 +8,7 @@ from app.auth import get_current_user
 from app.utils.file_handler import validate_image, validate_video, validate_audio, delete_file
 from pathlib import Path
 from typing import List
+from datetime import datetime
 
 router = APIRouter(prefix="/api/stories", tags=["stories"])
 
@@ -165,18 +166,22 @@ async def resubmit_story(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    story = db.query(Story).filter(Story.id == story_id, Story.author_id == current_user.id).first()
-    if not story or story.status != StoryStatus.needs_revision:
-        raise HTTPException(status_code=404, detail="História não disponível para correção")
-    if len(title.strip()) < 5 or len(title) > 150:
+    story = db.query(Story).filter(
+        Story.id == story_id,
+        Story.author_id == current_user.id,
+        Story.deleted_at.is_(None),
+    ).first()
+    if not story:
+        raise HTTPException(status_code=404, detail="História não encontrada")
+    if title.strip() and (len(title.strip()) < 5 or len(title) > 150):
         raise HTTPException(status_code=422, detail="O título deve ter entre 5 e 150 caracteres")
     if len(author_name.strip()) < 2 or len(author_name) > 100:
         raise HTTPException(status_code=422, detail="O nome deve ter entre 2 e 100 caracteres")
-    if len(story_text.strip()) < 10 and not (media and media.filename):
+    if len(story_text.strip()) < 10 and not (media and media.filename) and not story.media_url:
         raise HTTPException(status_code=422, detail="A história deve ter pelo menos 10 caracteres")
     if not consent_publish:
         raise HTTPException(status_code=422, detail="É necessário autorizar a publicação da história no mural")
-    story.title = title.strip()
+    story.title = title.strip() or "Áudio aguardando curadoria"
     story.author_name = author_name.strip()
     story.category = category.strip() or "Geral"
     story.story_text = story_text.strip()
@@ -195,6 +200,25 @@ async def resubmit_story(
     db.commit()
     db.refresh(story)
     return story
+
+
+@router.delete("/{story_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_my_story(
+    story_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    story = db.query(Story).filter(
+        Story.id == story_id,
+        Story.author_id == current_user.id,
+        Story.deleted_at.is_(None),
+    ).first()
+    if not story:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="História não encontrada")
+
+    story.deleted_at = datetime.utcnow()
+    db.commit()
+    return None
 
 @router.get("/categories/all", response_model=List[str])
 def get_categories(db: Session = Depends(get_db)):
