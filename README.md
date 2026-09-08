@@ -85,36 +85,46 @@ Frontend em http://localhost:5173
 
 ## Observações
 
-- Uploads são servidos em /uploads.
+- Uploads são servidos em /uploads (ou no bucket S3/R2 quando configurado).
 - O backend cria tabelas automaticamente ao iniciar.
 - Para ambientes existentes, aplique as migrations da pasta backend/migrations.
 - Para produção em HTTPS, configure COOKIE_SECURE=true para cookies técnicos.
+
+## Deploy Consolidado (1 serviço no Render)
+
+O backend serve o frontend buildado no mesmo processo, dispensando um serviço Node separado. No Render, configure um único Web Service Python com Root Directory `backend` e:
+
+```text
+Build Command: cd ../frontend && npm install && npm run build && rm -rf ../backend/frontend_dist && cp -r dist ../backend/frontend_dist && cd ../backend && pip install -r requirements.txt
+Start Command: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+O passo de copiar o build para dentro de `backend/frontend_dist` é necessário porque, com Root Directory definido, o Render só leva para produção o conteúdo dessa pasta.
+
+Com o frontend e o backend na mesma origem, `CORS_ORIGINS`/`FRONTEND_URL` deixam de ser necessários em produção (podem ficar vazios).
 
 ## Configuração de Produção (Obrigatória)
 
 Antes de publicar, configure no backend:
 
 - JWT_SECRET com valor forte e exclusivo.
-- FRONTEND_URL com o domínio real do frontend.
-- CORS_ORIGINS com os domínios permitidos, separados por vírgula.
 - COOKIE_SECURE=true em ambiente HTTPS.
-- REDIS_URL apontando para uma instância Redis (rate limit distribuído).
+- DATABASE_URL apontando para o PostgreSQL de produção.
+- S3_ENDPOINT_URL/S3_ACCESS_KEY/S3_SECRET_KEY/S3_BUCKET/S3_PUBLIC_URL para mídias (Cloudflare R2).
 
 Exemplo:
 
 ```env
 JWT_SECRET=troque_por_um_valor_forte
-FRONTEND_URL=https://seu-dominio.com
-CORS_ORIGINS=https://seu-dominio.com,https://www.seu-dominio.com
 COOKIE_SECURE=true
-REDIS_URL=redis://seu-redis:6379/0
 APP_ENV=production
 ```
 
 ## Anti-abuso em Produção
 
-- O limite de reações usa Redis quando `REDIS_URL` está configurado.
-- Sem Redis, o sistema usa fallback local em memória (adequado para desenvolvimento, não ideal para múltiplas instâncias).
+- O limite de reações usa Redis quando `REDIS_URL` está configurado (opcional).
+- Sem Redis, o sistema usa fallback local em memória. Como histórias e comentários já passam por moderação antes de publicar, o Redis é dispensável para uma unica instância; ele so ajuda a distribuir o rate limit de reações entre múltiplas instâncias.
+
 
 ## Verificação Rápida dos Endpoints
 

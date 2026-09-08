@@ -1,5 +1,6 @@
-﻿from fastapi import Depends, FastAPI, Response
+﻿from fastapi import Depends, FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 import os
@@ -30,9 +31,14 @@ upload_dir = Path(os.getenv("UPLOAD_DIR", "uploads"))
 upload_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=upload_dir), name="uploads")
 
+# Build do frontend (Vite), servido pelo mesmo processo quando presente.
+# Copiado para dentro de backend/ pelo build command, pois o Render (com
+# Root Directory=backend) so leva para producao o conteudo dessa pasta.
+FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend_dist"
+
 cors_origins = _parse_cors_origins()
 
-# CORS
+# CORS (relevante apenas quando frontend e backend rodam em origens diferentes)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
@@ -96,6 +102,17 @@ def robots_txt():
 @app.get("/health")
 def health_check():
     return {"status": "ok", "message": "Casos, Causos e Outras Histórias API"}
+
+# Frontend buildado (React/Vite): registrado por ultimo para nao sobrepor
+# as rotas de API, uploads e arquivos tecnicos definidos acima.
+if FRONTEND_DIST.exists():
+    app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="frontend-assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def serve_frontend(full_path: str):
+        if full_path.startswith("api/") or full_path.startswith("uploads/"):
+            raise HTTPException(status_code=404)
+        return FileResponse(FRONTEND_DIST / "index.html")
 
 if __name__ == "__main__":
     import uvicorn

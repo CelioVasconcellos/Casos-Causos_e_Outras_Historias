@@ -12,6 +12,7 @@ backend/*.db
 backend/*.sqlite
 backend/uploads/
 backend/.DS_Store
+backend/frontend_dist/
 
 # Frontend
 frontend/node_modules/
