@@ -141,6 +141,15 @@ export default function Feed() {
     if (categoryFromUrl) fetchStories()
   }, [search, author, title, categoryFromUrl, dateFrom, dateTo])
 
+  // Navegação por Link com #hash não rola a página sozinha em SPA; fazemos isso manualmente após as histórias carregarem.
+  useEffect(() => {
+    if (!categoryFromUrl || stories.length === 0) return
+    const hash = window.location.hash
+    if (!hash) return
+    const target = document.querySelector(hash)
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [categoryFromUrl, stories])
+
   const registerStoryView = useCallback(async (storyId) => {
     if (viewedStoriesRef.current.has(storyId)) return
     viewedStoriesRef.current.add(storyId)
