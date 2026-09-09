@@ -99,7 +99,7 @@ export default function Feed() {
   const fetchStories = async () => {
     setLoading(true)
     try {
-      const { data } = await axios.get('/api/stories', { params: { search, category: categoryFromUrl } })
+      const { data } = await axios.get('/api/stories/', { params: { search, category: categoryFromUrl } })
       const filteredStories = filterStories(data)
       setStories(filteredStories)
       fetchReactionSummaries(filteredStories)

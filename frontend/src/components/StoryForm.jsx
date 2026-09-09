@@ -146,7 +146,7 @@ export default function StoryForm({ onSuccess, storyToEdit = null }) {
       payload.append('consent_ebook', consentEbook ? 'true' : 'false')
       if (mediaFile) payload.append('media', mediaFile)
 
-      const endpoint = storyToEdit ? `/api/stories/${storyToEdit.id}` : '/api/stories'
+      const endpoint = storyToEdit ? `/api/stories/${storyToEdit.id}` : '/api/stories/'
       const method = storyToEdit ? 'put' : 'post'
       await axios[method](endpoint, payload, {
         headers: { Authorization: `Bearer ${token}` },
