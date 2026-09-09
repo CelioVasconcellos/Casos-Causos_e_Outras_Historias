@@ -4,6 +4,14 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import StoryCard from '../components/StoryCard'
 
 const EMOJI_ORDER = ['❤️', '🙏', '👏', '😮', '😢', '🌟']
+const FALLBACK_CATEGORIES = [
+  'Geral',
+  'Espirituais',
+  'Festas & Celebrações',
+  'Aprendizados',
+  'Relacionamentos',
+  'Vida & Viagens',
+]
 
 function createEmptyReactionSummary(storyId) {
   return {
@@ -29,16 +37,18 @@ export default function Feed() {
   const [title, setTitle] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
-  const [categories, setCategories] = useState([])
+  const [categories, setCategories] = useState(FALLBACK_CATEGORIES)
   const [loading, setLoading] = useState(false)
   const viewedStoriesRef = useRef(new Set())
+  const visibleCategories = categories.length > 0 ? categories : FALLBACK_CATEGORIES
 
   const fetchCategories = async () => {
     try {
       const { data } = await axios.get('/api/stories/categories/all')
-      setCategories(data)
+      const nextCategories = Array.isArray(data) && data.length > 0 ? data : FALLBACK_CATEGORIES
+      setCategories(nextCategories)
     } catch (_ignored) {
-      setCategories([])
+      setCategories(FALLBACK_CATEGORIES)
     }
   }
 
@@ -190,11 +200,11 @@ export default function Feed() {
           <span>Escolha um tema para encontrar histórias completas.</span>
         </section>}
 
-        {isCategoryDirectory && categories.length > 0 && (
+        {isCategoryDirectory && visibleCategories.length > 0 && (
           <section className="category-directory category-directory-page mb-8" aria-label="Categorias do mural">
             <div><p className="category-directory-kicker">Explore o acervo</p><h2>Histórias por categoria</h2></div>
             <div className="category-directory-links">
-              {categories.map((item) => <Link key={item} to={`/categorias/${encodeURIComponent(item)}`} className="category-directory-link">{item}</Link>)}
+              {visibleCategories.map((item) => <Link key={item} to={`/categorias/${encodeURIComponent(item)}`} className="category-directory-link">{item}</Link>)}
             </div>
           </section>
         )}
@@ -205,18 +215,31 @@ export default function Feed() {
           <span>Cada relato acrescenta uma memória ao mural e ajuda outras pessoas a reconhecer experiências, ideias e caminhos.</span>
         </section>}
 
-        {!categoryFromUrl && !isCategoryDirectory && featuredStories.length > 0 && (
-          <section className="featured-panel mb-8" aria-label="Histórias em destaque">
-            <div className="featured-heading"><div><p className="highlights-kicker">Para começar</p><h2>Histórias em destaque</h2></div></div>
-            <div className="featured-grid">
-              {featuredStories.map(({ label, story }) => (
-                <Link key={label} to={`/categorias/${encodeURIComponent(story.category)}#story-${story.id}`} className="featured-item">
-                  <span className="featured-label">{label}</span><span className="featured-category">{story.category}</span>
-                  <strong>{story.title}</strong><p>{storyExcerpt(story)}</p><small>Por {story.author_name}</small>
-                </Link>
-              ))}
-            </div>
-          </section>
+        {!categoryFromUrl && !isCategoryDirectory && (
+          featuredStories.length > 0 ? (
+            <section className="featured-panel mb-8" aria-label="Histórias em destaque">
+              <div className="featured-heading"><div><p className="highlights-kicker">Para começar</p><h2>Histórias em destaque</h2></div></div>
+              <div className="featured-grid">
+                {featuredStories.map(({ label, story }) => (
+                  <Link key={label} to={`/categorias/${encodeURIComponent(story.category)}#story-${story.id}`} className="featured-item">
+                    <span className="featured-label">{label}</span><span className="featured-category">{story.category}</span>
+                    <strong>{story.title}</strong><p>{storyExcerpt(story)}</p><small>Por {story.author_name}</small>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ) : (
+            <section className="featured-panel mb-8" aria-label="Histórias em destaque">
+              <div className="featured-heading"><div><p className="highlights-kicker">Para começar</p><h2>Histórias em destaque</h2></div></div>
+              <div className="featured-grid">
+                <div className="featured-item" style={{ gridColumn: '1 / -1' }}>
+                  <span className="featured-label">Ainda não há histórias publicadas</span>
+                  <strong>O mural está pronto para receber as primeiras memórias.</strong>
+                  <p>Quando uma história for aprovada, ela aparecerá aqui com o resumo mais recente e a mais lida.</p>
+                </div>
+              </div>
+            </section>
+          )
         )}
 
         {!categoryFromUrl && !isCategoryDirectory && <section className="participation-panel mb-8"><h2 className="participation-title">Como participar do mural</h2><p className="participation-copy">Leitura e reações são abertas a todos. Para enviar uma história nova, é preciso entrar com sua conta.</p><p className="participation-foot">Ao continuar, você concorda em usar o mural com respeito às memórias compartilhadas.</p></section>}

@@ -223,8 +223,9 @@ def delete_my_story(
 @router.get("/categories/all", response_model=List[str])
 def get_categories(db: Session = Depends(get_db)):
     used_categories = db.query(Story.category).filter(Story.status == StoryStatus.approved).distinct().all()
-    all_categories = list(DEFAULT_CATEGORIES)
-    for (cat,) in used_categories:
-        if cat and cat not in all_categories:
-            all_categories.append(cat)
+    all_categories = []
+    for item in DEFAULT_CATEGORIES + [cat for (cat,) in used_categories if cat]:
+        cleaned = (item or '').strip()
+        if cleaned and cleaned not in all_categories:
+            all_categories.append(cleaned)
     return all_categories
